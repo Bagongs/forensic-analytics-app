@@ -269,7 +269,7 @@ export default function SocialMediaCorrelationPage() {
       <div className="flex items-center justify-between px-8 pt-6">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => nav(-1)}
+            onClick={() => nav('/analytics', { replace: true })}
             className="text-[#EDC702] text-[18px] font-[Aldrich] hover:opacity-80"
           >
             ←

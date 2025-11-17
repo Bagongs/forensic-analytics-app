@@ -190,7 +190,11 @@ export default function ApkResultPage() {
       {/* === TOP BAR === */}
       <div className="flex items-center justify-between px-[3vw] pt-[2vh]">
         <div className="flex items-center gap-4">
-          <button onClick={() => nav(-1)} className="hover:opacity-80 transition" aria-label="Back">
+          <button
+            onClick={() => nav('/analytics', { replace: true })}
+            className="hover:opacity-80 transition"
+            aria-label="Back"
+          >
             <svg
               width="46"
               height="46"
