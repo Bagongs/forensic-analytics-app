@@ -1,0 +1,406 @@
+@import "tailwindcss";
+
+/* ============================================================
+   🅵🅾🅽🆃  LOCAL
+   ============================================================ */
+@font-face {
+  font-family: "Aldrich";
+  src: url("../assets/fonts/Aldrich-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+@font-face {
+  font-family: "Noto Sans";
+  src: url("../assets/fonts/NotoSans-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
+/* ============================================================
+   🎨 TOKENS — FORENSIC THEME
+   ============================================================ */
+:root {
+  --bg:          #0B0F17;
+  --panel:       #151D28;
+  --border:      #293240;
+  --text:        #E7E9EE;
+  --dim:         #9AA3B2;
+  --gold:        #EDC702;
+  --bgicon:      #2A3A51;
+  --radius:      14px;
+  --shadow:      0 10px 30px rgba(0,0,0,.35);
+  --border-1_5:  1.5px;
+  --border-icon:  1px #C3CFE0;
+}
+
+/* ============================================================
+   📄 BASE GLOBALS
+   ============================================================ */
+html, body, #root { height: 100%; }
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: "Noto Sans", system-ui, -apple-system, "Segoe UI", Roboto,
+    Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.6;
+
+  /* 🌌 Global Wallpaper */
+  background-image: var(--app-wall-bg, url('../assets/image/Background.png'));
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+/* ============================================================
+   ✍️ HEADINGS
+   ============================================================ */
+h1, h2, h3, h4, h5, h6, .heading, .app-title {
+  font-family: "Aldrich", Arial, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ============================================================
+   🌫️ WALL OVERLAY
+   ============================================================ */
+.app-wall::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  backdrop-filter: blur(8px);
+  background: rgba(0,0,0,0.35);
+  z-index: 0;
+}
+.app-wall > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ============================================================
+   ⚙️ COMPONENT UTILITIES
+   ============================================================ */
+.section {
+  max-width: 80rem;
+  margin-inline: auto;
+  padding-inline: 1.5rem;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.btn-gold {
+  background: var(--gold);
+  color: #101217;
+  font-family: "Aldrich", sans-serif;
+  box-shadow:
+    0 2px 0 0 #000 inset,
+    0 -3px 0 0 rgba(255,255,255,0.1) inset,
+    0 10px 20px rgba(0,0,0,.35);
+  transition: transform .08s ease, filter .15s ease;
+}
+.btn-gold:hover { filter: brightness(1.05); }
+.btn-gold:active { transform: translateY(1px); }
+
+.muted { color: var(--dim); }
+
+.btn-upload {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  /* 🌟 Background radial gradient */
+  background: radial-gradient(50% 50% at 50% 50%, #EDC702 0%, rgba(237, 199, 2, 0.7) 100%);
+  
+  /* 🌟 Border & text color */
+  border: 3px solid #EDC702B2;
+  color: #101217;
+  font-family: "Aldrich", sans-serif;
+  
+  /* ✨ Effect */
+  box-shadow: 0 10px 20px rgba(0, 0, 0, .35);
+  transition: transform .08s ease, filter .15s ease;
+}
+
+.btn-upload:hover {
+  filter: brightness(1.1);
+}
+
+.btn-upload:active {
+  transform: translateY(1px);
+}
+
+
+/* === Filter Button Style === */
+.btn-filter {
+  background: linear-gradient(
+    180deg,
+    rgba(34, 70, 122, 0.8) 0%,
+    rgba(22, 31, 45, 0.5) 50%,
+    rgba(34, 70, 122, 0.8) 100%
+  );
+  border-style: solid;
+  border-color: #c3cfe0;
+  border-width: 1.5px 0 1.5px 0; /* top & bottom only */
+  color: white;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-filter:hover {
+  filter: brightness(1.1);
+  border-color: #e0e7ff;
+}
+
+.btn-filter:active {
+  transform: scale(0.98);
+  filter: brightness(0.95);
+}
+
+/* ============================================================
+   🪫 DEVICE CARD — STATE
+   ============================================================ */
+.device-card {
+  /* background dengan alpha (#111720B2 ≈ rgba(17, 23, 32, 0.70)) */
+  background: #111720B2;
+
+  /* border gradient */
+  border: 1px solid transparent;              /* diperlukan agar border-image terlihat */
+  border-image-source: linear-gradient(115.65deg, #000000 32.14%, #666666 119.25%);
+  border-image-slice: 1;
+
+  /* blur kaca */
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);        /* Safari */
+
+}
+
+/* Hover (opsional): sedikit sorotan di border */
+.device-card:hover {
+  border-image-source: linear-gradient(115.65deg, #1a1a1a 32.14%, #8a8a8a 119.25%);
+}
+
+/* ============================================================
+   🪫 DEVICE CARD — EMPTY STATE
+   ============================================================ */
+@layer components {
+  .device-card-empty {
+    background: #1F293C;            /* panel */
+    border: 1px solid #50688D;      /* border */
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 340px;              /* tinggi default kartu */
+    position: relative;
+    overflow: hidden;
+  }
+  .device-card-empty__footer {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 42px;
+    background: #384963;            /* strip bawah */
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+  .device-card-empty__title {
+    font-family: "Aldrich", sans-serif;
+    font-size: 22px;
+    letter-spacing: 0.04em;
+  }
+  .device-card-empty__subtitle {
+    font-size: 18px;
+    opacity: .55;
+    margin-top: 6px;
+  }
+}
+
+
+/* ============================================================
+   ⬆️ UPLOAD PROGRESS — Fade elegan + Ketupat OVERLAY
+   ============================================================ */
+@layer components {
+  .upload-card{
+    background: var(--panel);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+  }
+
+  /* TRACK: tinggi bar jadi acuan semua ukuran */
+  .upload-track{
+    --track-h: 38px;                      /* tinggi progress bar */
+    --cap-w:  calc(var(--track-h) * 1.55);/* lebar cap (ketupat/parallelogram) */
+    --cap-angle: -22deg;                  /* kemiringan cap (sesuaikan dgn aset) */
+    --cap-overlap: 0.42;                  /* seberapa jauh cap MENIMPA fill (0..1) */
+
+    position: relative;
+    height: var(--track-h);
+    border-radius: 0;
+    background: #111720;
+    overflow: hidden;
+  }
+  .upload-track--gold    { border: 1px solid #C9A411; }
+  .upload-track--error   { border: 1px solid #ED0202; }
+  .upload-track--success { border: 1px solid #EDC702; }
+
+  /* GROUP: selebar progress% — SEMUA anak bergerak bersama */
+  .upload-group{
+    position: absolute;
+    inset: 0 auto 0 0;
+    height: 100%;
+    /* z-index default; fill di bawah, cap di atas */
+  }
+
+  /* FILL: isi penuh group; cap akan MENIMPA ujung kanan fill */
+  .upload-fill{
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 100%;
+    transition: width 420ms cubic-bezier(.22,.61,.36,1);
+    filter: drop-shadow(0 4px 4px rgba(0,0,0,.25));
+    z-index: 1;
+  }
+  /* Uploading (fade elegan) */
+  .upload-fill--gold{
+    background: linear-gradient(90deg, rgba(237,199,2,0.15) 0%, #C9A411 100%);
+    animation: fadePulse 2.4s ease-in-out infinite;
+    box-shadow: 0 4px 4px 0 #00000040;
+  }
+  /* Error */
+  .upload-fill--error{
+    background: linear-gradient(90deg, rgba(237,2,2,0.15) 0%, #C91111 100%);
+    box-shadow: 0 4px 4px 0 #00000040;
+  }
+  /* Success */
+  .upload-fill--success{ background:#EDC702; }
+
+  /* KETUPAT (parallelogram) — MENIMPA ujung fill di kanan */
+  .upload-cap{
+    position: absolute;
+    top: 50%;
+    right: calc(var(--cap-w) * -1 * var(--cap-overlap)); /* overlap ke dalam fill */
+    width: var(--cap-w);
+    height: var(--track-h);
+    transform: translateY(-50%) skewX(var(--cap-angle));
+    box-shadow: 0 4px 4px #00000040;
+    z-index: 2;            /* di atas fill */
+    pointer-events: none;
+  }
+  .upload-cap--gold    { background:#EDC702; }
+  .upload-cap--error   { background:#ED0202; }
+  .upload-cap--success { background:#EDC702; }
+
+  /* LABEL % — center mengikuti lebar group (tak menabrak cap) */
+  .upload-labelbox{
+    position: absolute;
+    inset: 0 auto 0 0;
+    display: flex; align-items:center; justify-content:center;
+    pointer-events: none;
+    z-index: 3; /* di atas fill; di bawah cap tidak masalah karena center */
+  }
+  .upload-label{
+    font-weight: 600; font-size: 18px;
+    color: var(--gold);
+    transition: color .2s ease;
+  }
+
+  .file-ext-badge{
+    font-size: 12px; line-height: 1;
+    padding: 4px 8px; border-radius: 6px;
+    border: 1px solid #E5D65C; color: #E5D65C;
+    background: color-mix(in oklab, #E5D65C 10%, transparent);
+  }
+  .status-ok{ color:#E5D65C; } .status-error{ color:#EF4444; } .status-dim{ color:#D1D5DB; }
+}
+
+/* Fade elegan */
+@keyframes fadePulse{
+  0%,100%{ opacity:.85; filter:brightness(1); }
+  50%    { opacity:1;   filter:brightness(1.22); }
+}
+
+
+
+/* ============================================================
+   🖱️ SCROLLBARS
+   ============================================================ */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: #2C3544; border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: #3E4A5C; }
+
+/* ============================================================
+   📊 ANALYTICS TABLE & LAYOUT UTILITIES
+   ============================================================ */
+
+/* ===== Header Ribbon (mockup style) ===== */
+.app-topbar {
+  position: relative;
+  height: 46px;
+  background: linear-gradient(180deg,#2A3A51,#1e2a3b);
+  border-bottom: 1px solid rgba(255,255,255,.18);
+  box-shadow: inset 0 -1px 0 rgba(0,0,0,.35);
+}
+
+/* ===== Table Base ===== */
+.table-text { font-size: 15px; }
+
+/* ===== Optional Notes Clamp (not always used) ===== */
+.notes-20-25 {
+  min-width: 20ch;
+  max-width: 25ch;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ============================================================
+   🧭 LAYOUT UTILS — POSISI & PENYEIMBANGAN
+   ============================================================ */
+
+/* Container condong ke kiri (bila dibutuhkan penuh halaman) */
+.page-left {
+  max-width: 1400px;
+  margin-right: auto;
+  margin-left: clamp(12px, 5vw, 72px);
+  padding-inline: 16px;
+}
+
+/* Divider vertikal netral */
+.v-divider {
+  width: 1.5px;
+  background: white;
+}
+
+/* Geser hanya tabel ke kiri (tidak pengaruh judul/CTA) */
+.table-shift-left {
+  margin-left: -120px; /* bisa ubah ke -24 / -40 sesuai desain */
+}
+@media (max-width: 1024px) {
+  .table-shift-left { margin-left: 0; }
+}
+
+/* Turunkan keseluruhan konten ke posisi tengah vertikal */
+.page-center-vertical {
+  min-height: calc(10vh - 240px); /* sisakan header+CTA */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* ===== Scrollbar emas khusus tabel AddDevice ===== */
+.adddev-table::-webkit-scrollbar { width: 12px; }
+.adddev-table::-webkit-scrollbar-track { background: #2A3A51; border-radius: 10px; }
+.adddev-table::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #EDC702 0%, rgba(237,199,2,0.45) 100%);
+  border-radius: 10px;
+  border: 2px solid #2A3A51; /* biar terasa “slot”nya */
+}

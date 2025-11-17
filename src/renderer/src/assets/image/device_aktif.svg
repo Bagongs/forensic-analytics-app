@@ -1,0 +1,12 @@
+<svg width="350" height="102" viewBox="0 0 350 102" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M31.0733 0.160177L25.0098 6.22367L313.765 6.22364L322.571 0.160156L31.0733 0.160177Z" fill="#A9CCFD"/>
+<path d="M22.7525 8.71484L0.00897891 32.0258L0.0078125 39.079L3.88805 42.6206V84.5674L0.0078125 88.9386L0.00897891 97.9829H307.057L347.562 56.2599V8.71484H22.7525Z" fill="url(#paint0_linear_88_523)"/>
+<foreignObject x="292.112" y="41.9963" width="78.1934" height="80.1527"><div xmlns="http://www.w3.org/1999/xhtml" style="backdrop-filter:blur(10.53px);height:100%;width:100%"></div></foreignObject><path data-figma-bg-blur-radius="21.0635" d="M313.559 100.724L348.86 63.4219" stroke="#A9CCFD" stroke-width="1.05318"/>
+<path d="M3.88805 42.6198V84.5665L0.0078125 88.9377V39.0781L3.88805 42.6198Z" fill="#A9CCFD"/>
+<defs>
+<linearGradient id="paint0_linear_88_523" x1="0.0078125" y1="53.3487" x2="516.486" y2="53.3487" gradientUnits="userSpaceOnUse">
+<stop stop-color="#2F4463"/>
+<stop offset="1" stop-color="#1E3C66"/>
+</linearGradient>
+</defs>
+</svg>
