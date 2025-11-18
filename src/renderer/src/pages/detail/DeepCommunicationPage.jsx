@@ -264,6 +264,7 @@ export default function DeepCommunicationPage() {
         device_id: device.id,
         search: (q || '').trim() || undefined
       })
+      console.log('chat detail : ', res)
       const msgs = toArray(res?.data?.chat_messages).map((m) => ({
         // Tampilan bubble sederhana
         time: s(m?.timestamp || m?.times),
@@ -341,7 +342,7 @@ export default function DeepCommunicationPage() {
       <HeaderBar />
 
       {/* TITLE + EXPORT */}
-      <div className="flex items-center justify-between px-8 pt-6">
+      <div className="flex items-center justify-between px-8 2xl:pt-6">
         <div className="flex items-center gap-4">
           <button
             onClick={() => nav('/analytics', { replace: true })}
@@ -575,7 +576,9 @@ export default function DeepCommunicationPage() {
                             background: isDevice ? COLORS.headerBg : '#2B394E'
                           }}
                         >
-                          <div className="text-[14px] leading-snug">{s(m.text)}</div>
+                          <div className="text-[14px] leading-snug whitespace-normal wrap-break-word">
+                            {s(m.text)}
+                          </div>
                           <div className="text-[11px] opacity-60 mt-1 text-right">{s(m.time)}</div>
                         </div>
                       </div>
@@ -599,8 +602,8 @@ export default function DeepCommunicationPage() {
           actionLabel={actionLabel}
           actionIcon={actionIcon}
           actionBgImage={editBg}
-          actionSize={{ w: 131.62269592285156, h: 58.389015197753906 }}
-          actionOffset={{ top: 22, right: 24 }}
+          // actionSize={{ w: 131.62269592285156, h: 58.389015197753906 }}
+          actionOffset={{ top: 15, right: 24 }}
           onAction={onSummaryAction}
         />
       </div>

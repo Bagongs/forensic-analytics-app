@@ -18,17 +18,16 @@ export async function exportPdfWithToast({
 }) {
   if (setIsExporting) setIsExporting(true)
   const t = toast.loading('Exporting PDF...')
-
+  const fileNameFile = fileName + `_${Date.now()}`
   try {
     const res = await window.api.report.exportPdf({
       analytic_id,
       person_name,
       device_id,
       source,
-      fileName
+      fileNameFile
     })
-    const savedPath = res?.outPath || res?.path || res?.data?.outPath || res?.data?.path
-    toast.success(savedPath ? `Export berhasil: ${savedPath}` : 'Export PDF berhasil')
+    toast.success('PDF exported successfully. Please check your Downloads folder.')
     return res
   } catch (e) {
     toast.error(extractHttpMessage(e, 'Export PDF gagal'))

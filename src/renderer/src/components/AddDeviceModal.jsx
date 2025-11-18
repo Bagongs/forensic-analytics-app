@@ -169,6 +169,11 @@ export default function AddDeviceModal({
     }
   }
 
+  function truncateText(text, max = 16) {
+    if (!text) return '-'
+    return text.length > max ? text.substring(0, max) + '...' : text
+  }
+
   const footer = (
     <div className="flex justify-end gap-3">
       <button
@@ -205,14 +210,14 @@ export default function AddDeviceModal({
     </div>
   )
 
-  const GRID_TEMPLATE = '70px 120px 1.6fr 1.2fr 2fr 1.2fr'
+  const GRID_TEMPLATE = '70px 120px 1.8fr 1.1fr 2fr 1fr'
 
   return (
     <Modal
       open={open}
       onCancel={onCancel}
       title="Select File"
-      size="xl"
+      size="2xl"
       footer={footer}
       closable
       className="select-none"
@@ -339,7 +344,7 @@ export default function AddDeviceModal({
                   {fmtDate(f.created_at)}
                 </div>
                 <div className="truncate text-sm" title={f.file_name || ''}>
-                  {f.file_name}
+                  {truncateText(f.file_name, 30)}
                 </div>
                 <div className="truncate text-sm" title={f.method || ''}>
                   {f.method || '-'}

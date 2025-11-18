@@ -22,10 +22,9 @@ export default function DeviceCard({
   if (isEmpty) {
     return (
       <div
-        className="overflow-hidden text-white flex flex-col"
+        className="overflow-hidden text-white flex flex-col 2xl:h-[637px] h-[550px]"
         style={{
           width: '369px',
-          height: '637px',
           background: '#1F293C',
           border: '1px solid #50688D',
           opacity: 1
@@ -52,8 +51,8 @@ export default function DeviceCard({
   // ===============================
   return (
     <div
-      className="device-card overflow-hidden text-white shadow-[0_10px_30px_rgba(0,0,0,0.35)] flex flex-col"
-      style={{ width: '369px', height: '637px', opacity: 1, transform: 'rotate(0deg)' }}
+      className="device-card overflow-hidden 2xl:h-[637px] h-[550px] text-white shadow-[0_10px_30px_rgba(0,0,0,0.35)] flex flex-col"
+      style={{ width: '369px', opacity: 1, transform: 'rotate(0deg)' }}
     >
       {/* Top banner */}
       <div className="relative h-[250px]">

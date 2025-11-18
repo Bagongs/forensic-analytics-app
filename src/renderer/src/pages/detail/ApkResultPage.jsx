@@ -89,13 +89,16 @@ export default function ApkResultPage() {
   // tags (hitung dari permissions)
   const tags = useMemo(() => {
     if (!rows?.length) return { malicious: 0, common: 0, total: 0 }
+
     let malicious = 0
     let common = 0
+
     for (const r of rows) {
-      const t = String(r?.type || '').toLowerCase()
-      if (t === 'malicious') malicious += 1
-      else if (t === 'common') common += 1
+      const s = String(r?.status || '').toLowerCase()
+      if (s === 'dangerous') malicious++
+      else common++
     }
+
     return { malicious, common, total: rows.length }
   }, [rows])
 
@@ -116,13 +119,14 @@ export default function ApkResultPage() {
 
   // filter table by tag
   const [activeTag, setActiveTag] = useState('malicious')
+
   const filteredRows = useMemo(() => {
     if (!rows?.length) return []
-    return rows.filter((r) =>
-      activeTag === 'malicious'
-        ? String(r.type).toLowerCase() !== 'common'
-        : String(r.type).toLowerCase() !== 'malicious'
-    )
+
+    return rows.filter((r) => {
+      const s = String(r?.status || '').toLowerCase()
+      return activeTag === 'malicious' ? s === 'dangerous' : s !== 'dangerous'
+    })
   }, [rows, activeTag])
 
   // color score
@@ -184,7 +188,7 @@ export default function ApkResultPage() {
   }
 
   return (
-    <div className="w-screen h-screen overflow-hidden text-white bg-[#101621]">
+    <div className="w-screen h-screen overflow-hidden text-white ">
       <HeaderBar />
 
       {/* === TOP BAR === */}
@@ -224,12 +228,13 @@ export default function ApkResultPage() {
       </div>
 
       {/* === MAIN CONTAINER === */}
+      {/* MAIN WRAPPER */}
       <div className="px-[3vw] mt-[2vh] flex justify-center">
         <div
-          className="rounded-[10px] p-[2vw] flex flex-col"
+          className="p-[2vw] flex flex-col 2xl:h-[70vh] h-[65vh]"
           style={{
             width: '94vw',
-            height: '91vh',
+            // height: '70vh',
             background: '#161E2A',
             border: '1.5px solid #C3CFE0'
           }}
@@ -245,7 +250,7 @@ export default function ApkResultPage() {
             className="mx-auto rounded-md flex flex-col min-h-0"
             style={{
               width: '81%',
-              height: '74%',
+              height: '90%',
               background: '#233043',
               border: '1.5px solid #394F6F',
               boxSizing: 'border-box',
@@ -298,7 +303,7 @@ export default function ApkResultPage() {
                 }}
               >
                 <div
-                  className="flex-1 flex flex-col min-h-0 overflow-hidden"
+                  className="flex-1 flex flex-col min-h-0 overflow-hidden max-h-full"
                   style={{
                     borderLeft: 'none',
                     borderTop: 'none',
@@ -315,7 +320,7 @@ export default function ApkResultPage() {
                   </div>
 
                   {/* Body */}
-                  <div className="flex-1 overflow-auto">
+                  <div className="flex-1 overflow-auto min-h-0">
                     {filteredRows.length ? (
                       filteredRows.map((r, i) => (
                         <div
@@ -323,10 +328,13 @@ export default function ApkResultPage() {
                           className="grid grid-cols-[20vw_1fr] px-[1vw] py-[0.6vw] text-[0.85vw] border-b hover:bg-[#2C3A4D]/40 transition"
                           style={{ borderColor: 'rgba(57,79,111,0.55)' }}
                         >
-                          <div className="pr-[0.8vw]">
+                          {/* ITEM */}
+                          <div className="pr-[0.8vw] whitespace-normal break-all leading-tight text-white">
                             {r.item || r.permission || r.name || '-'}
                           </div>
-                          <div className="text-white/85">
+
+                          {/* DESCRIPTION */}
+                          <div className="text-white/85 whitespace-normal break-all leading-tight">
                             {r.description || r.explain || r.desc || '-'}
                           </div>
                         </div>
@@ -339,7 +347,6 @@ export default function ApkResultPage() {
               </div>
             </div>
           </div>
-          {/* END PANEL */}
         </div>
       </div>
 
@@ -354,8 +361,8 @@ export default function ApkResultPage() {
           actionLabel={actionLabel}
           actionIcon={actionIcon}
           actionBgImage={editBg}
-          actionSize={{ w: 131.6, h: 58.4 }}
-          actionOffset={{ top: 22, right: 24 }}
+          // actionSize={{ w: 131.6, h: 58.4 }}
+          actionOffset={{ top: 15, right: 24 }}
           onAction={handleSummaryAction}
         />
       </div>

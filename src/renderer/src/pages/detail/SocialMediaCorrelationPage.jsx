@@ -266,7 +266,7 @@ export default function SocialMediaCorrelationPage() {
       <HeaderBar />
 
       {/* TITLE (tetap) */}
-      <div className="flex items-center justify-between px-8 pt-6">
+      <div className="flex items-center justify-between px-8 2xl:pt-6">
         <div className="flex items-center gap-4">
           <button
             onClick={() => nav('/analytics', { replace: true })}
@@ -487,8 +487,8 @@ export default function SocialMediaCorrelationPage() {
           actionLabel={actionLabel}
           actionIcon={actionIcon}
           actionBgImage={editBg}
-          actionSize={{ w: 131.62269592285156, h: 58.389015197753906 }}
-          actionOffset={{ top: 22, right: 24 }}
+          // actionSize={{ w: 131.62269592285156, h: 58.389015197753906 }}
+          actionOffset={{ top: 15, right: 24 }}
           onAction={async () => {
             if (!editing) {
               setEditing(true)

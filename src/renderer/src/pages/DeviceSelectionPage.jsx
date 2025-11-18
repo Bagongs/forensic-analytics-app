@@ -251,8 +251,11 @@ export default function DeviceSelectionPage() {
             </div>
           ) : (
             <div
-              className="grid gap-x-10 gap-y-12 justify-start"
-              style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(369px, 369px))' }}
+              className="grid gap-x-10 overflow-x-auto overflow-y-hidden py-2"
+              style={{
+                gridAutoFlow: 'column',
+                gridAutoColumns: '369px'
+              }}
             >
               {devices.map((d, i) => (
                 <DeviceCard
@@ -270,10 +273,7 @@ export default function DeviceSelectionPage() {
         </div>
 
         {/* Divider putih di bawah grid */}
-        <div
-          className="mt-10 mb-10 w-full"
-          style={{ border: '1px solid #FFFFFF', opacity: 0.25 }}
-        />
+        <div className="mt-5 w-full" style={{ border: '1px solid #FFFFFF', opacity: 0.25 }} />
 
         {devices.length > 0 && devices.length < MIN_DEVICES && (
           <div className="text-center text-sm" style={{ color: 'var(--dim)' }}>
@@ -283,13 +283,13 @@ export default function DeviceSelectionPage() {
       </div>
 
       {/* BOTTOM CTA */}
-      <div className="fixed left-0 right-0 bottom-16 flex justify-center pointer-events-auto z-50">
+      <div className=" flex justify-center pointer-events-auto z-50">
         <div className="pointer-events-auto">
           <button
-            className="relative inline-flex items-center justify-center border-none disabled:opacity-50 disabled:pointer-events-auto"
+            className="w-[200px] h-14 2xl:w-[230px] 2xl:h-[77px] relative inline-flex items-center justify-center border-none disabled:opacity-50 disabled:pointer-events-auto"
             style={{
-              width: 318,
-              height: 77,
+              // width: 200,
+              // height: 56,
               borderRadius: 14,
               fontSize: 18,
               fontFamily: 'Aldrich, sans-serif',
@@ -307,7 +307,9 @@ export default function DeviceSelectionPage() {
               className="absolute inset-0 w-full h-full object-contain pointer-events-auto"
               draggable="false"
             />
-            <span className="relative z-10 pointer-events-auto">Start Data Extractions</span>
+            <span className="relative z-10 pointer-events-auto text-xs 2xl:text-sm">
+              Start Data Extractions
+            </span>
           </button>
         </div>
       </div>

@@ -11,8 +11,8 @@ export default function SummaryBox({
   onAction,
   actionIcon = null,
   actionBgImage = null,
-  actionSize = { w: 132, h: 58.4 },
-  actionOffset = { top: 22, right: 24 },
+  actionSize = { w: 70, h: 27 },
+  actionOffset = { top: 15, right: 24 },
   editable = true,
   rowsMin = 3,
 

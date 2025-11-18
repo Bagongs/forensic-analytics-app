@@ -198,7 +198,7 @@ export default function AnalyticsPage() {
       <HeaderBar />
 
       {/* === MAIN CONTAINER (no global scroll) === */}
-      <div className="w-full px-12 ">
+      <div className="w-full px-12 2xl:mt-9">
         <h1 className="app-title text-[32px] text-left font-bold">ANALYTICS</h1>
 
         <div className="mt-2 grid grid-cols-1 xl:grid-cols-2 gap-8">
@@ -222,7 +222,7 @@ export default function AnalyticsPage() {
               </div>
             </div>
 
-            <div className="panel flex flex-col bg-[#111720]">
+            <div className="panel flex flex-col text-sm bg-[#111720]">
               {/* Header */}
               <div className="grid grid-cols-[150px_250px_1fr] text-sm bg-[#395070] text-[#EDC702] shrink-0">
                 <div className="px-4 py-3 font-semibold">Date</div>
@@ -231,7 +231,7 @@ export default function AnalyticsPage() {
               </div>
 
               {/* Scroll body only */}
-              <div className="max-h-[550px] bg-[#111720] overflow-y-auto divide-y divide-(--border) scrollbar-thin scrollbar-thumb-[#394F6F] scrollbar-track-transparent">
+              <div className="2xl:max-h-[650px] max-h-[550px] bg-[#111720] overflow-y-auto divide-y divide-(--border) scrollbar-thin scrollbar-thumb-[#394F6F] scrollbar-track-transparent">
                 {uploadedRows.length === 0 && (
                   <div className="px-4 py-6 text-sm text-center text-(--dim)">
                     Belum ada file di server.
@@ -255,7 +255,7 @@ export default function AnalyticsPage() {
 
                       {/* File name dengan truncate + tooltip */}
                       <div className="px-4 py-3 truncate" title={fileName}>
-                        {truncateText(fileName)}
+                        {truncateText(fileName, 20)}
                       </div>
 
                       {/* Notes dengan truncate + tooltip */}
@@ -263,7 +263,7 @@ export default function AnalyticsPage() {
                         className="px-4 py-3 overflow-hidden whitespace-nowrap"
                         title={notes || '-'}
                       >
-                        {truncateText(notes)}
+                        {truncateText(notes, 20)}
                       </div>
                     </div>
                   )
@@ -313,9 +313,9 @@ export default function AnalyticsPage() {
               </div>
 
               {/* Scroll body only */}
-              <div className="max-h-[550px] overflow-y-auto divide-y bg-[#111720] divide-(--border) scrollbar-thin scrollbar-thumb-[#394F6F] scrollbar-track-transparent ">
+              <div className="2xl:max-h-[650px] max-h-[550px] overflow-y-auto divide-y bg-[#111720] divide-(--border) scrollbar-thin scrollbar-thumb-[#394F6F] scrollbar-track-transparent ">
                 {filteredHistory.length === 0 && (
-                  <div className="px-4 py-8 text-sm text-center text-(--dim)">
+                  <div className="px-4 py-6 text-sm text-center text-(--dim)">
                     Belum ada history.
                   </div>
                 )}
@@ -415,7 +415,7 @@ export default function AnalyticsPage() {
       <div className="mt-5 left-0 right-0 bottom-10 flex justify-center pointer-events-none">
         <div className="pointer-events-auto">
           <button
-            className="relative inline-flex items-center justify-center px-14 py-5 text-xl"
+            className="w-[200px] h-14 2xl:w-[230px] 2xl:h-[77px] relative inline-flex items-center justify-center px-14 py-5 text-xl"
             style={{ borderRadius: 20 }}
             onClick={() => setOpenStart(true)}
             disabled={uploadedRows.length === 0}
@@ -425,7 +425,9 @@ export default function AnalyticsPage() {
               alt="Start Button"
               className="absolute inset-0 w-full h-full object-contain"
             />
-            <span className="relative z-10 font-bold text-[#0C0C0C]">Start Analyzing</span>
+            <span className="relative z-10 font-bold text-[#0C0C0C] text-sm 2xl:text-base text-nowrap">
+              Start Analyzing
+            </span>
           </button>
         </div>
       </div>

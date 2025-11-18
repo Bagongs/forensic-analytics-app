@@ -84,7 +84,7 @@ export default function UserManagement() {
       <HeaderBar />
 
       {/* CONTENT */}
-      <main className="flex-1 px-8 pt-6 pb-8">
+      <main className="flex-1 px-8 2xl:pt-6 pb-8">
         {/* ===== TITLE + BACK BUTTON ===== */}
         <div className="flex items-center justify-between mb-4">
           <button

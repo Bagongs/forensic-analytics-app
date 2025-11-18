@@ -247,11 +247,11 @@ export default function ContactCorrelationPage() {
   const onRetry = () => reloadRef.current?.()
 
   return (
-    <div className="min-h-screen bg-[#0B0F17] text-[#E7E9EE] font-[Noto Sans]">
+    <div className="min-h-screen text-[#E7E9EE] font-[Noto Sans]">
       <HeaderBar />
 
       {/* TITLE */}
-      <div className="flex items-center justify-between px-8 pt-6">
+      <div className="flex items-center justify-between px-8 2xl:pt-6">
         <div className="flex items-center gap-4">
           <button
             onClick={onBack}
@@ -467,8 +467,8 @@ export default function ContactCorrelationPage() {
           actionLabel={actionLabel}
           actionIcon={actionIcon}
           actionBgImage={editBg}
-          actionSize={{ w: 131.6227, h: 58.389 }}
-          actionOffset={{ top: 22, right: 24 }}
+          // actionSize={{ w: 131.6227, h: 58.389 }}
+          actionOffset={{ top: 15, right: 24 }}
           onAction={onSummaryAction}
         />
       </div>

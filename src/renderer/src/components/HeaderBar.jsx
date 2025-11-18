@@ -52,14 +52,14 @@ export default function HeaderBar() {
           alt=""
           className="absolute top-0 left-0 w-screen h-auto object-cover -z-10"
         />
-        <div className="flex justify-end items-center relative lg:mt-2 md:mt-2  mr-1">
+        <div className="flex justify-end items-center relative 2xl:mt-5 mt-2 mr-1">
           <button
             ref={btnRef}
             onClick={() => setOpen((v) => !v)}
-            className="flex self-end justify-end items-center mt-7 gap-2 text-white hover:opacity-90 select-none"
+            className="flex self-end justify-end items-center md:mt-6 mt-5 gap-2 text-white hover:opacity-90 select-none"
           >
             <img src={userIcon} alt="User" className="w-6 h-6" />
-            <span className="text-sm tracking-tighter">{safeUser.fullname}</span>
+            <span className="2xl:text-lg text-sm tracking-tighter">{safeUser.fullname}</span>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="ml-1">
               <path
                 d="M7 10l5 5 5-5"
