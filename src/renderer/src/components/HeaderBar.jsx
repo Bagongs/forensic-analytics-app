@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import headerImg from '@renderer/assets/image/header.png'
+import headerImg from '@renderer/assets/image/header.svg'
 import userIcon from '@renderer/assets/icons/user.svg'
 import { useAuth } from '@renderer/store/auth'
 import { useNavigate } from 'react-router-dom'
@@ -45,54 +45,43 @@ export default function HeaderBar() {
   const displayPassword = showPassword ? safeUser.password || masked : masked
 
   return (
-    <div
-      className="w-full h-[84px] flex items-center justify-between px-6 relative"
-      style={{
-        backgroundImage: `url(${headerImg})`,
-        backgroundSize: 'cover',
-        backgroundRepeat: 'no-repeat',
-        backgroundPosition: 'center'
-      }}
-    >
-      {/* LEFT: Title */}
-      <div className="flex items-center gap-3 pl-24 mt-7">
-        <h1
-          className="font-[Aldrich] text-[#EDC702] text-4xl tracking-wider"
-          style={{ letterSpacing: '1px' }}
-        >
-          CYBER SENTINEL
-        </h1>
+    <>
+      <div className="w-full md:h-[84px] lg:h-[100px] relative overflow-x-hidden">
+        <img
+          src={headerImg}
+          alt=""
+          className="absolute top-0 left-0 w-screen h-auto object-cover -z-10"
+        />
+        <div className="flex justify-end items-center relative lg:mt-2 md:mt-2  mr-1">
+          <button
+            ref={btnRef}
+            onClick={() => setOpen((v) => !v)}
+            className="flex self-end justify-end items-center mt-7 gap-2 text-white hover:opacity-90 select-none"
+          >
+            <img src={userIcon} alt="User" className="w-6 h-6" />
+            <span className="text-sm tracking-tighter">{safeUser.fullname}</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="ml-1">
+              <path
+                d="M7 10l5 5 5-5"
+                stroke="white"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+          {/* ===================== PROFILE DROPDOWN ===================== */}
+        </div>
       </div>
-
-      {/* RIGHT: Profile */}
-      <button
-        ref={btnRef}
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center mt-7 gap-2 text-white hover:opacity-90 select-none"
-      >
-        <img src={userIcon} alt="User" className="w-6 h-6" />
-        <span className="text-base tracking-tighter">{safeUser.fullname}</span>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="ml-1">
-          <path
-            d="M7 10l5 5 5-5"
-            stroke="white"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </button>
-
-      {/* ===================== PROFILE DROPDOWN ===================== */}
       {open && (
         <div
           ref={popRef}
-          className="absolute right-4 top-[72px] w-[320px] overflow-hidden text-[#E7E9EE] z-50"
+          className="absolute right-4 top-[72px] w-[320px] overflow-hidden text-[#E7E9EE] z-50 mt-2"
           style={{
             background: '#151D28',
             border: '1.5px solid #C3CFE0',
             boxShadow: '0px 4px 4px 0px #00000040',
-            borderRadius: '10px'
+            borderRadius: '8px'
           }}
         >
           {/* ===== TOP: user info ===== */}
@@ -156,6 +145,6 @@ export default function HeaderBar() {
           </button>
         </div>
       )}
-    </div>
+    </>
   )
 }

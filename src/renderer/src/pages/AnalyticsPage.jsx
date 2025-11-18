@@ -116,6 +116,11 @@ function normalizeUploadProgress(res) {
   return { pct, status, message, fileId }
 }
 
+function truncateText(text, max = 16) {
+  if (!text) return '-'
+  return text.length > max ? text.substring(0, max) + '...' : text
+}
+
 /* ===================================================== */
 export default function AnalyticsPage() {
   const nav = useNavigate()
@@ -194,9 +199,9 @@ export default function AnalyticsPage() {
 
       {/* === MAIN CONTAINER (no global scroll) === */}
       <div className="w-full px-12 ">
-        <h1 className="app-title text-[44px] mt-9 text-left">ANALYTICS</h1>
+        <h1 className="app-title text-[32px] text-left font-bold">ANALYTICS</h1>
 
-        <div className="mt-9 grid grid-cols-1 xl:grid-cols-2 gap-8">
+        <div className="mt-2 grid grid-cols-1 xl:grid-cols-2 gap-8">
           {/* LEFT: Uploaded Data */}
           <section className="space-y-3">
             <div className="flex items-center justify-between">
@@ -219,35 +224,46 @@ export default function AnalyticsPage() {
 
             <div className="panel flex flex-col bg-[#111720]">
               {/* Header */}
-              <div className="grid grid-cols-[200px_320px_1fr] text-sm bg-[#395070] text-[#EDC702] shrink-0">
+              <div className="grid grid-cols-[150px_250px_1fr] text-sm bg-[#395070] text-[#EDC702] shrink-0">
                 <div className="px-4 py-3 font-semibold">Date</div>
                 <div className="px-4 py-3 font-semibold">File name</div>
                 <div className="px-4 py-3 font-semibold">Notes</div>
               </div>
 
               {/* Scroll body only */}
-              <div className="max-h-[585px] overflow-y-auto divide-y divide-(--border) scrollbar-thin scrollbar-thumb-[#394F6F] scrollbar-track-transparent">
+              <div className="max-h-[550px] bg-[#111720] overflow-y-auto divide-y divide-(--border) scrollbar-thin scrollbar-thumb-[#394F6F] scrollbar-track-transparent">
                 {uploadedRows.length === 0 && (
                   <div className="px-4 py-6 text-sm text-center text-(--dim)">
                     Belum ada file di server.
                   </div>
                 )}
+
                 {uploadedRows.map((row) => {
                   const id =
                     row.id ?? row.file_id ?? row.upload_id ?? `${row.file_name}-${row.created_at}`
                   const date = row.created_at ?? row.date ?? row.uploaded_at
                   const fileName = row.file_name ?? row.name ?? 'Unnamed'
                   const notes = row.notes ?? ''
+
                   return (
                     <div
                       key={id}
-                      className="grid grid-cols-[200px_320px_1fr] items-center hover:bg-[#0f1520]"
+                      className="grid grid-cols-[150px_250px_1fr] items-center hover:bg-[#0f1520]"
                       style={{ minHeight: 52 }}
                     >
                       <div className="px-4 py-3">{formatDate(date)}</div>
-                      <div className="px-4 py-3 truncate">{fileName}</div>
-                      <div className="px-4 py-3 overflow-hidden whitespace-nowrap">
-                        {notes || '-'}
+
+                      {/* File name dengan truncate + tooltip */}
+                      <div className="px-4 py-3 truncate" title={fileName}>
+                        {truncateText(fileName)}
+                      </div>
+
+                      {/* Notes dengan truncate + tooltip */}
+                      <div
+                        className="px-4 py-3 overflow-hidden whitespace-nowrap"
+                        title={notes || '-'}
+                      >
+                        {truncateText(notes)}
                       </div>
                     </div>
                   )
@@ -283,21 +299,21 @@ export default function AnalyticsPage() {
               </div>
             </div>
 
-            <div className="panel flex flex-col bg-[#111720]">
+            <div className="panel flex flex-col bg-[#111720] mt-3.5">
               {/* Header */}
               <div
-                className="grid text-sm bg-[#395070] text-[#EDC702] shrink-0"
-                style={{ gridTemplateColumns: '120px 200px 190px minmax(0,1fr) 120px' }}
+                className="grid text-sm bg-[#395070] text-[#EDC702] shrink-0 "
+                style={{ gridTemplateColumns: '120px 180px 160px minmax(0,1fr) 120px' }}
               >
                 <div className="px-4 py-3 font-semibold">Date</div>
                 <div className="px-4 py-3 font-semibold">Analytics Name</div>
                 <div className="px-3 py-3 font-semibold">Method</div>
-                <div className="px-4 py-3 font-semibold">Notes</div>
+                <div className="px-4 py-3 font-semibold">Summary</div>
                 <div className="px-4 py-3 font-semibold text-center">Actions</div>
               </div>
 
               {/* Scroll body only */}
-              <div className="max-h-[585px] overflow-y-auto divide-y divide-(--border) scrollbar-thin scrollbar-thumb-[#394F6F] scrollbar-track-transparent">
+              <div className="max-h-[550px] overflow-y-auto divide-y bg-[#111720] divide-(--border) scrollbar-thin scrollbar-thumb-[#394F6F] scrollbar-track-transparent ">
                 {filteredHistory.length === 0 && (
                   <div className="px-4 py-8 text-sm text-center text-(--dim)">
                     Belum ada history.
@@ -342,16 +358,31 @@ export default function AnalyticsPage() {
                   return (
                     <div
                       key={id}
-                      className="grid items-center text-sm hover:bg-[#0f1520]"
+                      className="grid items-center text-sm hover:bg-[#0f1520] mt-1"
                       style={{
-                        gridTemplateColumns: '120px 200px 190px minmax(0,1fr) 120px',
+                        gridTemplateColumns: '120px 180px 160px minmax(0,1fr) 120px',
                         minHeight: 52
                       }}
                     >
+                      {/* Date */}
                       <div className="px-4 truncate">{row.date || formatDate(row.created_at)}</div>
-                      <div className="px-4 truncate">{name}</div>
-                      <div className="px-3 truncate">{methodStr}</div>
-                      <div className="px-4 overflow-hidden">{notes || '-'}</div>
+
+                      {/* Name (truncate + tooltip) */}
+                      <div className="px-4 truncate" title={name}>
+                        {truncateText(name)}
+                      </div>
+
+                      {/* Method (truncate + tooltip) */}
+                      <div className="px-3 truncate" title={methodStr}>
+                        {truncateText(methodStr)}
+                      </div>
+
+                      {/* Notes (truncate + tooltip) */}
+                      <div className="px-4 overflow-hidden whitespace-nowrap" title={notes || '-'}>
+                        {truncateText(notes)}
+                      </div>
+
+                      {/* Actions */}
                       <div className="px-2 flex justify-center gap-2">
                         <button
                           className="h-9 w-9 inline-flex items-center justify-center border border-(--border-icon) bg-(--bgicon) hover:bg-white/5 transition"
@@ -381,7 +412,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* CTA FIXED */}
-      <div className="fixed left-0 right-0 bottom-10 flex justify-center pointer-events-none">
+      <div className="mt-5 left-0 right-0 bottom-10 flex justify-center pointer-events-none">
         <div className="pointer-events-auto">
           <button
             className="relative inline-flex items-center justify-center px-14 py-5 text-xl"

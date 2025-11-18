@@ -50,14 +50,14 @@ export default function LoginPage() {
         >
           <img src={iconApp} alt="App Logo" className="w-44 h-44 object-contain select-none" />
           <h1
-            className="text-4xl tracking-wider"
+            className="text-4xl font-bold normal-case"
             style={{
               color: 'var(--gold)',
               fontFamily: 'Aldrich, sans-serif',
-              letterSpacing: '.04em'
+              textTransform: 'capitalize'
             }}
           >
-            CYBER SENTINEL
+            Data Analytics Platform
           </h1>
         </div>
 
