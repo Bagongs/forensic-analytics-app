@@ -50,6 +50,23 @@ function normalizePlatformKey(raw) {
   return match || s
 }
 
+// hapus whitespace + invisible unicode (ZWSP, LRM, RLM, BOM, NBSP, dll)
+function cleanName(raw) {
+  const s = toStringSafe(raw)
+  // buang zero-width + direction marks + BOM
+  const noInvisible = s.replace(/[\u200B-\u200F\u202A-\u202E\u2060\uFEFF]/g, '')
+  // normal trim termasuk NBSP
+  const trimmed = noInvisible.replace(/\u00A0/g, ' ').trim()
+  return trimmed
+}
+
+function isValidName(raw) {
+  const name = cleanName(raw)
+  if (!name) return false
+  if (name.toLowerCase() === 'unknown') return false
+  return true
+}
+
 /* ============ komponen kecil (UI tetap) ============ */
 function SquareCheckbox({ active }) {
   return (
@@ -208,10 +225,9 @@ export default function SocialMediaCorrelationPage() {
               if (!Array.isArray(row)) continue
 
               for (let j = 0; j < deviceCount; j++) {
-                const name = toStringSafe(row[j]).trim()
-                if (!name) continue
-                if (name.toLowerCase() === 'unknown') continue // filter Unknown
-                deviceSets[j].add(name)
+                const nameRaw = row[j]
+                if (!isValidName(nameRaw)) continue
+                deviceSets[j].add(cleanName(nameRaw))
               }
             }
           }
