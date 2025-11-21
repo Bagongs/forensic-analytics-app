@@ -194,7 +194,7 @@ export default function HashfileAnalyticsPage() {
   }
 
   // Summary
-  const actionLabel = isEditing ? 'Save' : summary.trim() ? 'Edit' : 'Add'
+  const actionLabel = isEditing ? 'Save' : summary?.trim() ? 'Edit' : 'Add'
   const actionIcon = isEditing ? (
     <FaRegSave className="text-[16px]" />
   ) : (

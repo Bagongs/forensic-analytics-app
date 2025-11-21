@@ -134,7 +134,7 @@ export default function DeepCommunicationPage() {
   // ringkasan
   const [summary, setSummary] = useState('')
   const [editing, setEditing] = useState(false)
-  const actionLabel = editing ? 'Save' : summary.trim() ? 'Edit' : 'Add'
+  const actionLabel = editing ? 'Save' : summary?.trim() ? 'Edit' : 'Add'
   const actionIcon = editing ? (
     <FaRegSave className="text-[16px]" />
   ) : (

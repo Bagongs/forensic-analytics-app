@@ -199,7 +199,7 @@ export default function ContactCorrelationPage() {
   }
 
   // Summary actions
-  const actionLabel = isEditing ? 'Save' : summary.trim() ? 'Edit' : 'Add'
+  const actionLabel = isEditing ? 'Save' : summary?.trim() ? 'Edit' : 'Add'
   const actionIcon = isEditing ? (
     <FaRegSave className="text-[16px]" />
   ) : (

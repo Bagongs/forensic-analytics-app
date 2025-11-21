@@ -106,7 +106,7 @@ export default function ApkResultPage() {
   // summary
   const [summary, setSummary] = useState('')
   const [isEditing, setIsEditing] = useState(false)
-  const actionLabel = isEditing ? 'Save' : summary.trim() ? 'Edit' : 'Add'
+  const actionLabel = isEditing ? 'Save' : summary?.trim() ? 'Edit' : 'Add'
   const actionIcon = isEditing ? (
     <FaRegSave className="text-[16px]" />
   ) : (

@@ -133,7 +133,7 @@ export default function SocialMediaCorrelationPage() {
   const [isExporting, setIsExporting] = useState(false)
   const [editing, setEditing] = useState(false)
   const savingRef = useRef(false)
-  const actionLabel = editing ? 'Save' : summary.trim() ? 'Edit' : 'Add'
+  const actionLabel = editing ? 'Save' : summary?.trim() ? 'Edit' : 'Add'
   const actionIcon = editing ? (
     <FaRegSave className="text-[16px]" />
   ) : (
