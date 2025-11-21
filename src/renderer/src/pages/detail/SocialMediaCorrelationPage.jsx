@@ -50,22 +50,24 @@ function normalizePlatformKey(raw) {
   return match || s
 }
 
-// bersihkan invisible unicode
+// bersihkan invisible unicode, jika kosong → "Unknown"
 function cleanName(raw) {
   const s = toStringSafe(raw)
 
-  // buang zero-width + direction marks + BOM
+  // 1) buang zero-width + direction marks + BOM
   let out = s.replace(/[\u200B-\u200F\u202A-\u202E\u2060\uFEFF]/g, '')
 
-  // buang karakter "kosong tapi bukan whitespace"
+  // 2) buang karakter "kosong tapi bukan whitespace"
+  // - \u3164  : Hangul Filler (ㅤ)
+  // - \u2800  : Braille Pattern Blank
+  // - \u115F\u1160 : Hangul Jamo fillers
   out = out.replace(/[\u3164\u2800\u115F\u1160]/g, '')
 
-  // normalisasi NBSP → spasi
+  // 3) NBSP → spasi, lalu trim
   out = out.replace(/\u00A0/g, ' ').trim()
 
-  // jika setelah dibersihkan kosong → gantikan dengan "Unknown"
+  // 4) kalau kosong → Unknown
   if (!out) return 'Unknown'
-
   return out
 }
 
@@ -150,17 +152,22 @@ export default function SocialMediaCorrelationPage() {
 
   // ====== Data API ======
   const [devices, setDevices] = useState([])
-  const [totalDevices, setTotalDevices] = useState(0) // fallback untuk skeleton sebelum devices kebaca
+  const [totalDevices, setTotalDevices] = useState(0) // fallback jumlah kolom saat loading
 
   /**
    * bentuk:
    * {
-   *   Telegram: [Set(dev1Names), Set(dev2Names), ...],
+   *   Telegram: [
+   *     ["a","b","Unknown", ...], // kontak device 1 (per row)
+   *     ["a","b","Unknown", ...], // kontak device 2 (per row)
+   *     ...
+   *   ],
    *   Instagram: [...],
    * }
    */
   const [namesByPlatformByDevice, setNamesByPlatformByDevice] = useState({})
 
+  // summary
   const [summary, setSummary] = useState('')
 
   // status
@@ -195,6 +202,7 @@ export default function SocialMediaCorrelationPage() {
         if (!mounted) return
         const payload = res?.data || res
 
+        // total devices (fallback)
         const td = Number(payload?.total_devices || payload?.totalDevices || 0)
         setTotalDevices(Number.isFinite(td) ? td : 0)
 
@@ -206,7 +214,7 @@ export default function SocialMediaCorrelationPage() {
         }))
         setDevices(devs)
 
-        // ===== PARSE correlations (PER DEVICE berdasarkan index array row) =====
+        // ===== PARSE correlations (PER DEVICE, duplikat tetap muncul) =====
         const corrObj = payload?.correlations || {}
         const deviceCount =
           devs.length || Number(payload?.total_devices || payload?.devices?.length || 0) || 1
@@ -217,30 +225,31 @@ export default function SocialMediaCorrelationPage() {
           const pfKey = normalizePlatformKey(pfRaw)
           if (!pfKey) continue
 
-          const deviceSets = Array.from({ length: deviceCount }, () => new Set())
+          // array list per device (bukan Set)
+          const deviceLists = Array.from({ length: deviceCount }, () => [])
 
           const buckets = toArray(pfVal?.buckets)
           for (const b of buckets) {
-            const rows = toArray(b?.devices) // rows = [ [dev1, dev2, dev3], ... ]
+            const rows = toArray(b?.devices) // rows = [ [dev1,dev2,dev3], ... ]
 
             for (const row of rows) {
               if (!Array.isArray(row)) continue
 
               for (let j = 0; j < deviceCount; j++) {
-                const rawName = row[j]
-                const cleaned = cleanName(rawName)
-                deviceSets[j].add(cleaned)
+                const cleaned = cleanName(row[j])
+                // push selalu, biarkan Unknown muncul sebanyak row yg kosong
+                deviceLists[j].push(cleaned)
               }
             }
           }
 
-          perPlatform[pfKey] = deviceSets
+          perPlatform[pfKey] = deviceLists
         }
 
         // pastikan semua platform selalu punya key
         for (const pf of PLATFORMS) {
           if (!perPlatform[pf]) {
-            perPlatform[pf] = Array.from({ length: deviceCount }, () => new Set())
+            perPlatform[pf] = Array.from({ length: deviceCount }, () => [])
           }
         }
 
@@ -265,28 +274,27 @@ export default function SocialMediaCorrelationPage() {
 
   // ===== jumlah kolom contact = jumlah device =====
   const contactColumnsCount = useMemo(() => {
-    const deviceSets = namesByPlatformByDevice[platform]
-    if (deviceSets && Array.isArray(deviceSets) && deviceSets.length > 0) return deviceSets.length
+    const lists = namesByPlatformByDevice[platform]
+    if (lists && Array.isArray(lists) && lists.length > 0) return lists.length
+
     const n = devices.length || totalDevices || 1
     return Math.max(1, n)
   }, [namesByPlatformByDevice, platform, devices.length, totalDevices])
 
-  // ===== kolom diambil langsung per device (transpose sudah di parse) =====
+  // ===== columns per device (tanpa dedupe; Unknown bisa banyak) =====
   const columns = useMemo(() => {
-    const deviceSets = namesByPlatformByDevice[platform] || []
+    const deviceLists = namesByPlatformByDevice[platform] || []
 
-    // sort per kolom
-    let cols = deviceSets.map((set) =>
-      Array.from(set).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
-    )
-
-    // kalau set kosong (misal platform belum ada di response), tetap buat array kosong sesuai jumlah kolom
-    if (cols.length === 0) cols = Array.from({ length: contactColumnsCount }, () => [])
+    // kalau belum ada data platform → tetap buat array kosong
+    let cols =
+      deviceLists.length > 0
+        ? deviceLists.map((list) => [...list])
+        : Array.from({ length: contactColumnsCount }, () => [])
 
     const q = query.trim().toLowerCase()
     if (!q) return cols
 
-    // filter per kolom (tetap mempertahankan pemisahan per device)
+    // filter per kolom
     return cols.map((list) => list.filter((n) => n.toLowerCase().includes(q)))
   }, [namesByPlatformByDevice, platform, query, contactColumnsCount])
 
@@ -511,11 +519,11 @@ export default function SocialMediaCorrelationPage() {
                             – No data for “{platform}” –
                           </div>
                         ) : (
-                          names.map((name) => {
+                          names.map((name, idx) => {
                             const highlighted = !!selectedName && name === selectedName
                             return (
                               <ContactRow
-                                key={`${colIdx}:${name}`}
+                                key={`${colIdx}:${idx}:${name}`}
                                 name={name}
                                 highlighted={highlighted}
                                 onClick={() =>
