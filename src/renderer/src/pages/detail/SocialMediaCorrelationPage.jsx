@@ -28,8 +28,6 @@ const COLORS = {
   diamondActiveBg: '#322A01'
 }
 
-const CONTACT_COLUMNS = 6
-
 // 🔒 Platform fixed
 const PLATFORMS = ['Instagram', 'Facebook', 'Whatsapp', 'Tiktok', 'Telegram', 'X']
 const PLATFORM_OPTIONS = PLATFORMS.map((p) => ({ value: p, label: p }))
@@ -132,6 +130,7 @@ export default function SocialMediaCorrelationPage() {
 
   // ====== Data API ======
   const [devices, setDevices] = useState([])
+  const [totalDevices, setTotalDevices] = useState(0) // fallback jumlah kolom saat loading
   const [namesByPlatform, setNamesByPlatform] = useState(() => {
     const init = {}
     for (const pf of PLATFORMS) init[pf] = new Set()
@@ -171,6 +170,10 @@ export default function SocialMediaCorrelationPage() {
         if (!mounted) return
         const payload = res?.data || res
 
+        // simpan total devices untuk skeleton/fallback
+        const td = Number(payload?.total_devices || payload?.totalDevices || 0)
+        setTotalDevices(Number.isFinite(td) ? td : 0)
+
         // devices untuk tabs
         const devs = toArray(payload?.devices).map((d, i) => ({
           id: toStringSafe(d?.device_label || d?.device_id || i + 1),
@@ -179,7 +182,7 @@ export default function SocialMediaCorrelationPage() {
         }))
         setDevices(devs)
 
-        // ===== FIX PARSING correlations object keyed by platform =====
+        // ===== Parse correlations object keyed by platform =====
         const map = new Map()
         for (const pf of PLATFORMS) map.set(pf, new Set())
 
@@ -228,7 +231,13 @@ export default function SocialMediaCorrelationPage() {
     }
   }, [platform, analyticId])
 
-  // ====== 6 kolom dari API (tanpa dummy) ======
+  // ====== jumlah kolom = jumlah device ======
+  const contactColumnsCount = useMemo(() => {
+    const n = devices.length || totalDevices || 1
+    return Math.max(1, n)
+  }, [devices.length, totalDevices])
+
+  // ====== Kolom mengikuti jumlah device ======
   const columns = useMemo(() => {
     const setNames = namesByPlatform[platform] || new Set()
     const all = Array.from(setNames).sort((a, b) =>
@@ -238,16 +247,15 @@ export default function SocialMediaCorrelationPage() {
     const q = query.trim().toLowerCase()
     const filtered = q ? all.filter((n) => n.toLowerCase().includes(q)) : all
 
-    const cols = Array.from({ length: CONTACT_COLUMNS }, () => [])
+    const cols = Array.from({ length: contactColumnsCount }, () => [])
     filtered.forEach((name, i) => {
-      cols[i % CONTACT_COLUMNS].push(name)
+      cols[i % contactColumnsCount].push(name)
     })
     return cols
-  }, [namesByPlatform, platform, query])
+  }, [namesByPlatform, platform, query, contactColumnsCount])
 
   const koneksi = useMemo(() => {
     if (!selectedName) return 0
-    // koneksi = jumlah kolom tempat nama muncul (umumnya 1, tapi biar aman)
     return columns.reduce((sum, list) => sum + (list.includes(selectedName) ? 1 : 0), 0)
   }, [columns, selectedName])
 
@@ -270,7 +278,6 @@ export default function SocialMediaCorrelationPage() {
 
     savingRef.current = true
     try {
-      // kamu bisa ganti ke editSummary kalau backend strict
       await window.api.report.saveSummary({
         analytic_id: analyticId,
         summary
@@ -367,7 +374,6 @@ export default function SocialMediaCorrelationPage() {
             <h2 className="font-[Aldrich] text-[36px] ">Similarity Contacted Sosmed</h2>
 
             <div className="ml-auto flex items-center gap-4">
-              {/* SelectField pakai PLATFORM_OPTIONS (fixed) */}
               <div style={{ width: 337 }}>
                 <SelectField
                   value={platform}
@@ -380,7 +386,6 @@ export default function SocialMediaCorrelationPage() {
                 />
               </div>
 
-              {/* Search (tetap) */}
               <div
                 className="flex items-center gap-2 px-3 py-2 border h-12"
                 style={{ borderColor: COLORS.border, background: COLORS.panel }}
@@ -411,9 +416,9 @@ export default function SocialMediaCorrelationPage() {
             {/* Kolom-kolom */}
             <div className="flex-1 overflow-x-auto">
               <div className="flex gap-6 min-w-max pr-2">
-                {/* Loading → skeleton 6 kolom */}
+                {/* Loading → skeleton sesuai jumlah device */}
                 {loading &&
-                  Array.from({ length: CONTACT_COLUMNS }).map((_, colIdx) => (
+                  Array.from({ length: contactColumnsCount }).map((_, colIdx) => (
                     <div key={`sk-${colIdx}`} className="shrink-0 p-3" style={{ width: 260 }}>
                       <div className="text-center mb-2">
                         <div className="font-[Aldrich]" style={{ color: COLORS.text }}>
@@ -428,7 +433,7 @@ export default function SocialMediaCorrelationPage() {
                     </div>
                   ))}
 
-                {/* Error sederhana */}
+                {/* Error */}
                 {!loading && error && (
                   <div className="px-4 py-8 text-center text-red-300 min-w-[300px]">
                     {error}
@@ -448,7 +453,6 @@ export default function SocialMediaCorrelationPage() {
                   !error &&
                   columns.map((names, colIdx) => (
                     <div key={colIdx} className="shrink-0 p-3" style={{ width: 260 }}>
-                      {/* Header kecil kolom */}
                       <div className="text-center mb-2">
                         <div className="font-[Aldrich]" style={{ color: COLORS.text }}>
                           {`Contact ${colIdx + 1}`}
@@ -459,7 +463,6 @@ export default function SocialMediaCorrelationPage() {
                         />
                       </div>
 
-                      {/* Border putih list nama */}
                       <div
                         style={{
                           border: `1px solid ${COLORS.white}`,
@@ -495,7 +498,7 @@ export default function SocialMediaCorrelationPage() {
         </div>
       </div>
 
-      {/* SUMMARY (UI tetap) */}
+      {/* SUMMARY */}
       <div className="px-8 mt-8 pb-12">
         <SummaryBox
           title="Summary"
