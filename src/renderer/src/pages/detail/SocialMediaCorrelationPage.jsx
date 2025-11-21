@@ -1,4 +1,5 @@
 /* eslint-disable react/prop-types */
+
 // src/renderer/src/pages/detail/SocialMediaCorrelationPage.jsx
 
 import { useMemo, useState, useEffect, useRef } from 'react'
@@ -130,12 +131,17 @@ export default function SocialMediaCorrelationPage() {
 
   // ====== Data API ======
   const [devices, setDevices] = useState([])
-  const [totalDevices, setTotalDevices] = useState(0) // fallback jumlah kolom saat loading
-  const [namesByPlatform, setNamesByPlatform] = useState(() => {
-    const init = {}
-    for (const pf of PLATFORMS) init[pf] = new Set()
-    return init
-  })
+  const [totalDevices, setTotalDevices] = useState(0) // fallback untuk skeleton sebelum devices kebaca
+
+  /**
+   * bentuk:
+   * {
+   *   Telegram: [Set(dev1Names), Set(dev2Names), ...],
+   *   Instagram: [...],
+   * }
+   */
+  const [namesByPlatformByDevice, setNamesByPlatformByDevice] = useState({})
+
   const [summary, setSummary] = useState('')
 
   // status
@@ -170,7 +176,6 @@ export default function SocialMediaCorrelationPage() {
         if (!mounted) return
         const payload = res?.data || res
 
-        // simpan total devices untuk skeleton/fallback
         const td = Number(payload?.total_devices || payload?.totalDevices || 0)
         setTotalDevices(Number.isFinite(td) ? td : 0)
 
@@ -182,37 +187,46 @@ export default function SocialMediaCorrelationPage() {
         }))
         setDevices(devs)
 
-        // ===== Parse correlations object keyed by platform =====
-        const map = new Map()
-        for (const pf of PLATFORMS) map.set(pf, new Set())
-
+        // ===== PARSE correlations (PER DEVICE berdasarkan index array row) =====
         const corrObj = payload?.correlations || {}
+        const deviceCount =
+          devs.length || Number(payload?.total_devices || payload?.devices?.length || 0) || 1
+
+        const perPlatform = {}
+
         for (const [pfRaw, pfVal] of Object.entries(corrObj)) {
           const pfKey = normalizePlatformKey(pfRaw)
           if (!pfKey) continue
-          if (!map.has(pfKey)) map.set(pfKey, new Set())
+
+          const deviceSets = Array.from({ length: deviceCount }, () => new Set())
 
           const buckets = toArray(pfVal?.buckets)
           for (const b of buckets) {
-            const devPairs = toArray(b?.devices)
-            for (const pair of devPairs) {
-              if (Array.isArray(pair)) {
-                pair
-                  .map((n) => toStringSafe(n).trim())
-                  .filter(Boolean)
-                  .forEach((n) => map.get(pfKey).add(n))
-              } else {
-                const n = toStringSafe(pair).trim()
-                if (n) map.get(pfKey).add(n)
+            const rows = toArray(b?.devices) // rows = [ [dev1, dev2, dev3], ... ]
+
+            for (const row of rows) {
+              if (!Array.isArray(row)) continue
+
+              for (let j = 0; j < deviceCount; j++) {
+                const name = toStringSafe(row[j]).trim()
+                if (!name) continue
+                if (name.toLowerCase() === 'unknown') continue // filter Unknown
+                deviceSets[j].add(name)
               }
             }
           }
+
+          perPlatform[pfKey] = deviceSets
         }
 
-        const obj = {}
-        for (const pf of PLATFORMS) obj[pf] = map.get(pf) || new Set()
-        setNamesByPlatform(obj)
+        // pastikan semua platform selalu punya key
+        for (const pf of PLATFORMS) {
+          if (!perPlatform[pf]) {
+            perPlatform[pf] = Array.from({ length: deviceCount }, () => new Set())
+          }
+        }
 
+        setNamesByPlatformByDevice(perPlatform)
         setSummary(toStringSafe(payload?.summary || ''))
       } catch (e) {
         if (!mounted) return
@@ -231,28 +245,32 @@ export default function SocialMediaCorrelationPage() {
     }
   }, [platform, analyticId])
 
-  // ====== jumlah kolom = jumlah device ======
+  // ===== jumlah kolom contact = jumlah device =====
   const contactColumnsCount = useMemo(() => {
+    const deviceSets = namesByPlatformByDevice[platform]
+    if (deviceSets && Array.isArray(deviceSets) && deviceSets.length > 0) return deviceSets.length
     const n = devices.length || totalDevices || 1
     return Math.max(1, n)
-  }, [devices.length, totalDevices])
+  }, [namesByPlatformByDevice, platform, devices.length, totalDevices])
 
-  // ====== Kolom mengikuti jumlah device ======
+  // ===== kolom diambil langsung per device (transpose sudah di parse) =====
   const columns = useMemo(() => {
-    const setNames = namesByPlatform[platform] || new Set()
-    const all = Array.from(setNames).sort((a, b) =>
-      a.localeCompare(b, undefined, { sensitivity: 'base' })
+    const deviceSets = namesByPlatformByDevice[platform] || []
+
+    // sort per kolom
+    let cols = deviceSets.map((set) =>
+      Array.from(set).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
     )
 
-    const q = query.trim().toLowerCase()
-    const filtered = q ? all.filter((n) => n.toLowerCase().includes(q)) : all
+    // kalau set kosong (misal platform belum ada di response), tetap buat array kosong sesuai jumlah kolom
+    if (cols.length === 0) cols = Array.from({ length: contactColumnsCount }, () => [])
 
-    const cols = Array.from({ length: contactColumnsCount }, () => [])
-    filtered.forEach((name, i) => {
-      cols[i % contactColumnsCount].push(name)
-    })
-    return cols
-  }, [namesByPlatform, platform, query, contactColumnsCount])
+    const q = query.trim().toLowerCase()
+    if (!q) return cols
+
+    // filter per kolom (tetap mempertahankan pemisahan per device)
+    return cols.map((list) => list.filter((n) => n.toLowerCase().includes(q)))
+  }, [namesByPlatformByDevice, platform, query, contactColumnsCount])
 
   const koneksi = useMemo(() => {
     if (!selectedName) return 0
