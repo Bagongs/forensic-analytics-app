@@ -50,30 +50,23 @@ function normalizePlatformKey(raw) {
   return match || s
 }
 
-// hapus whitespace + invisible unicode (ZWSP, LRM, RLM, BOM, NBSP, Hangul filler, braille blank, dll)
+// bersihkan invisible unicode
 function cleanName(raw) {
   const s = toStringSafe(raw)
 
-  // 1) buang zero-width + direction marks + BOM
+  // buang zero-width + direction marks + BOM
   let out = s.replace(/[\u200B-\u200F\u202A-\u202E\u2060\uFEFF]/g, '')
 
-  // 2) buang karakter "kosong tapi bukan whitespace"
-  // - \u3164  : Hangul Filler (ㅤ)
-  // - \u2800  : Braille Pattern Blank
-  // - \u115F\u1160 : Hangul Jamo fillers
+  // buang karakter "kosong tapi bukan whitespace"
   out = out.replace(/[\u3164\u2800\u115F\u1160]/g, '')
 
-  // 3) normalisasi NBSP ke spasi lalu trim
+  // normalisasi NBSP → spasi
   out = out.replace(/\u00A0/g, ' ').trim()
 
-  return out
-}
+  // jika setelah dibersihkan kosong → gantikan dengan "Unknown"
+  if (!out) return 'Unknown'
 
-function isValidName(raw) {
-  const name = cleanName(raw)
-  if (!name) return false
-  if (name.toLowerCase() === 'unknown') return false
-  return true
+  return out
 }
 
 /* ============ komponen kecil (UI tetap) ============ */
@@ -235,8 +228,8 @@ export default function SocialMediaCorrelationPage() {
 
               for (let j = 0; j < deviceCount; j++) {
                 const rawName = row[j]
-                if (!isValidName(rawName)) continue
-                deviceSets[j].add(cleanName(rawName))
+                const cleaned = cleanName(rawName)
+                deviceSets[j].add(cleaned)
               }
             }
           }
