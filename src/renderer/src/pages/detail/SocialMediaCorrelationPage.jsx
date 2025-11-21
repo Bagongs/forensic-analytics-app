@@ -225,9 +225,9 @@ export default function SocialMediaCorrelationPage() {
               if (!Array.isArray(row)) continue
 
               for (let j = 0; j < deviceCount; j++) {
-                const nameRaw = row[j]
-                if (!isValidName(nameRaw)) continue
-                deviceSets[j].add(cleanName(nameRaw))
+                const rawName = row[j]
+                if (!isValidName(rawName)) continue
+                deviceSets[j].add(cleanName(rawName))
               }
             }
           }
