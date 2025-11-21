@@ -1,5 +1,4 @@
 /* eslint-disable react/prop-types */
-/* eslint-disable no-unused-vars */
 // src/renderer/src/pages/detail/SocialMediaCorrelationPage.jsx
 
 import { useMemo, useState, useEffect, useRef } from 'react'
@@ -31,7 +30,7 @@ const COLORS = {
 
 const CONTACT_COLUMNS = 6
 
-// 🔒 Platform fixed (default Instagram)
+// 🔒 Platform fixed
 const PLATFORMS = ['Instagram', 'Facebook', 'Whatsapp', 'Tiktok', 'Telegram', 'X']
 const PLATFORM_OPTIONS = PLATFORMS.map((p) => ({ value: p, label: p }))
 
@@ -44,6 +43,12 @@ function toArray(x) {
 function toStringSafe(v) {
   if (v === null || v === undefined) return ''
   return String(v)
+}
+function normalizePlatformKey(raw) {
+  const s = toStringSafe(raw).trim()
+  if (!s) return ''
+  const match = PLATFORMS.find((p) => p.toLowerCase() === s.toLowerCase())
+  return match || s
 }
 
 /* ============ komponen kecil (UI tetap) ============ */
@@ -109,19 +114,29 @@ function ColumnSkeleton({ rows = 10 }) {
   )
 }
 
-/* ================== HALAMAN (tanpa dummy, platform fixed) ================== */
+/* ================== HALAMAN FINAL ================== */
 export default function SocialMediaCorrelationPage() {
   const nav = useNavigate()
   const { state } = useLocation()
 
+  // ====== derive analytic id/name once ======
+  const analyticId =
+    state?.analysisId || state?.analytic_id || state?.id || state?.analyticId || undefined
+  const analyticName =
+    state?.analysisName || state?.analytic_name || state?.name || 'social-media-correlation-report'
+
   // ====== UI state ======
-  const [platform, setPlatform] = useState('Instagram') // ⬅️ default fixed
+  const [platform, setPlatform] = useState('Instagram')
   const [query, setQuery] = useState('')
   const [selectedName, setSelectedName] = useState(null)
 
   // ====== Data API ======
-  const [devices, setDevices] = useState([]) // untuk DeviceTabsInfo (visual)
-  const [namesByPlatform, setNamesByPlatform] = useState({}) // { platform: Set<string> }
+  const [devices, setDevices] = useState([])
+  const [namesByPlatform, setNamesByPlatform] = useState(() => {
+    const init = {}
+    for (const pf of PLATFORMS) init[pf] = new Set()
+    return init
+  })
   const [summary, setSummary] = useState('')
 
   // status
@@ -133,6 +148,7 @@ export default function SocialMediaCorrelationPage() {
   const [isExporting, setIsExporting] = useState(false)
   const [editing, setEditing] = useState(false)
   const savingRef = useRef(false)
+
   const actionLabel = editing ? 'Save' : summary?.trim() ? 'Edit' : 'Add'
   const actionIcon = editing ? (
     <FaRegSave className="text-[16px]" />
@@ -140,54 +156,58 @@ export default function SocialMediaCorrelationPage() {
     <LiaEditSolid className="text-[18px]" />
   )
 
-  // ====== Fetch dari API (sekali; tidak tergantung platform) ======
+  // ====== Fetch dari API (setiap platform berubah → hit endpoint) ======
   useEffect(() => {
     let mounted = true
+
     async function fetchNow() {
       setLoading(true)
       setError('')
       try {
         const res = await window.api.analytics.getSocialMediaCorrelation({
-          analytic_id: state?.analysisId || state?.analytic_id || state?.id || undefined
+          analytic_id: analyticId,
+          platform
         })
         if (!mounted) return
         const payload = res?.data || res
 
         // devices untuk tabs
         const devs = toArray(payload?.devices).map((d, i) => ({
-          id: toStringSafe(d?.device_label || i + 1),
+          id: toStringSafe(d?.device_label || d?.device_id || i + 1),
           owner_name: toStringSafe(d?.owner_name || '—'),
           phone_number: toStringSafe(d?.phone_number || '—')
         }))
         setDevices(devs)
 
-        // index nama per platform (Set unik)
+        // ===== FIX PARSING correlations object keyed by platform =====
         const map = new Map()
-        const corr = toArray(payload?.correlations)
-        for (const it of corr) {
-          const pf = toStringSafe(it?.platform || it?.platform_name)
-          if (!pf) continue
-          if (!map.has(pf)) map.set(pf, new Set())
+        for (const pf of PLATFORMS) map.set(pf, new Set())
 
-          const contactsA = toArray(it?.contacts)
-          const contactsB = toArray(it?.contact_names)
-          const contactsCombined = (contactsA.length ? contactsA : contactsB)
-            .map((x) => toStringSafe(x))
-            .filter(Boolean)
-          contactsCombined.forEach((n) => map.get(pf).add(n))
+        const corrObj = payload?.correlations || {}
+        for (const [pfRaw, pfVal] of Object.entries(corrObj)) {
+          const pfKey = normalizePlatformKey(pfRaw)
+          if (!pfKey) continue
+          if (!map.has(pfKey)) map.set(pfKey, new Set())
 
-          const devicesFoundIn = toArray(it?.devices_found_in)
-          for (const d of devicesFoundIn) {
-            const name = toStringSafe(d?.contact_name)
-            if (name) map.get(pf).add(name)
+          const buckets = toArray(pfVal?.buckets)
+          for (const b of buckets) {
+            const devPairs = toArray(b?.devices)
+            for (const pair of devPairs) {
+              if (Array.isArray(pair)) {
+                pair
+                  .map((n) => toStringSafe(n).trim())
+                  .filter(Boolean)
+                  .forEach((n) => map.get(pfKey).add(n))
+              } else {
+                const n = toStringSafe(pair).trim()
+                if (n) map.get(pfKey).add(n)
+              }
+            }
           }
         }
 
         const obj = {}
-        // pastikan semua platform fixed tersedia sebagai key, walau kosong
-        for (const pf of PLATFORMS) {
-          obj[pf] = map.get(pf) || new Set()
-        }
+        for (const pf of PLATFORMS) obj[pf] = map.get(pf) || new Set()
         setNamesByPlatform(obj)
 
         setSummary(toStringSafe(payload?.summary || ''))
@@ -199,12 +219,14 @@ export default function SocialMediaCorrelationPage() {
         if (mounted) setLoading(false)
       }
     }
+
     reloadRef.current = fetchNow
     fetchNow()
+
     return () => {
       mounted = false
     }
-  }, [state])
+  }, [platform, analyticId])
 
   // ====== 6 kolom dari API (tanpa dummy) ======
   const columns = useMemo(() => {
@@ -225,6 +247,7 @@ export default function SocialMediaCorrelationPage() {
 
   const koneksi = useMemo(() => {
     if (!selectedName) return 0
+    // koneksi = jumlah kolom tempat nama muncul (umumnya 1, tapi biar aman)
     return columns.reduce((sum, list) => sum + (list.includes(selectedName) ? 1 : 0), 0)
   }, [columns, selectedName])
 
@@ -235,22 +258,21 @@ export default function SocialMediaCorrelationPage() {
   const onExportPdf = async () => {
     if (disableExport) return
     await exportPdfWithToast({
-      analytic_id: state?.analysisId || state?.analytic_id || state?.id || undefined,
-      fileName: state?.analysisName || 'social-media-correlation-report',
+      analytic_id: analyticId,
+      fileName: analyticName,
       setIsExporting
     })
   }
 
   const onSummaryAction = async () => {
-    if (!editing) {
-      setEditing(true)
-      return
-    }
+    if (!editing) return setEditing(true)
     if (savingRef.current) return
+
     savingRef.current = true
     try {
+      // kamu bisa ganti ke editSummary kalau backend strict
       await window.api.report.saveSummary({
-        analytic_id: state?.analysisId || state?.analytic_id || state?.id || undefined,
+        analytic_id: analyticId,
         summary
       })
       setEditing(false)
@@ -275,7 +297,7 @@ export default function SocialMediaCorrelationPage() {
             ←
           </button>
           <h1 className="font-[Aldrich] text-[22px] tracking-wide text-white">
-            SOCIAL MEDIA CORRELATION{state?.analysisName ? ` — ${state.analysisName}` : ''}
+            SOCIAL MEDIA CORRELATION{analyticName ? ` — ${analyticName}` : ''}
           </h1>
         </div>
       </div>
@@ -424,52 +446,49 @@ export default function SocialMediaCorrelationPage() {
                 {/* Normal/Empty per kolom */}
                 {!loading &&
                   !error &&
-                  columns.map((list, colIdx) => {
-                    const names = list
-                    return (
-                      <div key={colIdx} className="shrink-0 p-3" style={{ width: 260 }}>
-                        {/* Header kecil kolom */}
-                        <div className="text-center mb-2">
-                          <div className="font-[Aldrich]" style={{ color: COLORS.text }}>
-                            {`Contact ${colIdx + 1}`}
-                          </div>
-                          <div
-                            className="mx-auto mt-1 h-0.5 w-24"
-                            style={{ background: COLORS.white }}
-                          />
+                  columns.map((names, colIdx) => (
+                    <div key={colIdx} className="shrink-0 p-3" style={{ width: 260 }}>
+                      {/* Header kecil kolom */}
+                      <div className="text-center mb-2">
+                        <div className="font-[Aldrich]" style={{ color: COLORS.text }}>
+                          {`Contact ${colIdx + 1}`}
                         </div>
-
-                        {/* Border putih list nama */}
                         <div
-                          style={{
-                            border: `1px solid ${COLORS.white}`,
-                            maxHeight: 360,
-                            overflowY: 'auto'
-                          }}
-                        >
-                          {names.length === 0 ? (
-                            <div className="px-4 py-8 text-center opacity-60">
-                              – No data for “{platform}” –
-                            </div>
-                          ) : (
-                            names.map((name) => {
-                              const highlighted = !!selectedName && name === selectedName
-                              return (
-                                <ContactRow
-                                  key={`${colIdx}:${name}`}
-                                  name={name}
-                                  highlighted={highlighted}
-                                  onClick={() =>
-                                    setSelectedName((prev) => (prev === name ? null : name))
-                                  }
-                                />
-                              )
-                            })
-                          )}
-                        </div>
+                          className="mx-auto mt-1 h-0.5 w-24"
+                          style={{ background: COLORS.white }}
+                        />
                       </div>
-                    )
-                  })}
+
+                      {/* Border putih list nama */}
+                      <div
+                        style={{
+                          border: `1px solid ${COLORS.white}`,
+                          maxHeight: 360,
+                          overflowY: 'auto'
+                        }}
+                      >
+                        {names.length === 0 ? (
+                          <div className="px-4 py-8 text-center opacity-60">
+                            – No data for “{platform}” –
+                          </div>
+                        ) : (
+                          names.map((name) => {
+                            const highlighted = !!selectedName && name === selectedName
+                            return (
+                              <ContactRow
+                                key={`${colIdx}:${name}`}
+                                name={name}
+                                highlighted={highlighted}
+                                onClick={() =>
+                                  setSelectedName((prev) => (prev === name ? null : name))
+                                }
+                              />
+                            )
+                          })
+                        )}
+                      </div>
+                    </div>
+                  ))}
               </div>
             </div>
           </div>
@@ -487,27 +506,8 @@ export default function SocialMediaCorrelationPage() {
           actionLabel={actionLabel}
           actionIcon={actionIcon}
           actionBgImage={editBg}
-          // actionSize={{ w: 131.62269592285156, h: 58.389015197753906 }}
           actionOffset={{ top: 15, right: 24 }}
-          onAction={async () => {
-            if (!editing) {
-              setEditing(true)
-              return
-            }
-            if (savingRef.current) return
-            savingRef.current = true
-            try {
-              await window.api.report.saveSummary({
-                analytic_id: state?.analysisId || state?.analytic_id || state?.id || undefined,
-                summary
-              })
-              setEditing(false)
-            } catch (e) {
-              alert(extractHttpMessage(e, 'Gagal menyimpan ringkasan'))
-            } finally {
-              savingRef.current = false
-            }
-          }}
+          onAction={onSummaryAction}
         />
       </div>
     </div>

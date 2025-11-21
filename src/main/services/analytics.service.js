@@ -54,9 +54,9 @@ export async function getDeepCommunication({ analytic_id }) {
   })
   return data
 }
-export async function getSocialMediaCorrelation({ analytic_id }) {
+export async function getSocialMediaCorrelation({ analytic_id, platform }) {
   const { data } = await api.get('/api/v1/analytics/social-media-correlation', {
-    params: { analytic_id }
+    params: { analytic_id, platform }
   })
   return data
 }
