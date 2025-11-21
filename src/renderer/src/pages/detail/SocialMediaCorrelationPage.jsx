@@ -50,14 +50,23 @@ function normalizePlatformKey(raw) {
   return match || s
 }
 
-// hapus whitespace + invisible unicode (ZWSP, LRM, RLM, BOM, NBSP, dll)
+// hapus whitespace + invisible unicode (ZWSP, LRM, RLM, BOM, NBSP, Hangul filler, braille blank, dll)
 function cleanName(raw) {
   const s = toStringSafe(raw)
-  // buang zero-width + direction marks + BOM
-  const noInvisible = s.replace(/[\u200B-\u200F\u202A-\u202E\u2060\uFEFF]/g, '')
-  // normal trim termasuk NBSP
-  const trimmed = noInvisible.replace(/\u00A0/g, ' ').trim()
-  return trimmed
+
+  // 1) buang zero-width + direction marks + BOM
+  let out = s.replace(/[\u200B-\u200F\u202A-\u202E\u2060\uFEFF]/g, '')
+
+  // 2) buang karakter "kosong tapi bukan whitespace"
+  // - \u3164  : Hangul Filler (ㅤ)
+  // - \u2800  : Braille Pattern Blank
+  // - \u115F\u1160 : Hangul Jamo fillers
+  out = out.replace(/[\u3164\u2800\u115F\u1160]/g, '')
+
+  // 3) normalisasi NBSP ke spasi lalu trim
+  out = out.replace(/\u00A0/g, ' ').trim()
+
+  return out
 }
 
 function isValidName(raw) {
