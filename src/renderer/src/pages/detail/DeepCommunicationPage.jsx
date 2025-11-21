@@ -36,6 +36,18 @@ const COLORS = {
   text: '#E7E9EE'
 }
 
+const COLORS_NAME = ['#68A2FF', '#43BE21', '#B783FC', '#F49E4F', '#F65B54', '#F87EBA', '#50D4E4']
+
+const senderColorMap = {}
+
+function getSenderColor(senderId) {
+  if (senderColorMap[senderId]) return senderColorMap[senderId]
+
+  const index = Object.keys(senderColorMap).length % COLORS_NAME.length
+  senderColorMap[senderId] = COLORS_NAME[index]
+
+  return senderColorMap[senderId]
+}
 // Kontrak API pakai label platform Title Case: Instagram, Telegram, WhatsApp, Facebook, X, TikTok
 const CHANNELS = [
   { name: 'WhatsApp', icon: iconWhatsapp },
@@ -247,31 +259,61 @@ export default function DeepCommunicationPage() {
     setQuery('')
     await loadPeople(label)
   }
-
+  const [chatType, setChatType] = useState(null)
   const loadChat = async ({ person, q }) => {
     if (!analysisId || !device?.id || !selectedChannel || (!person && !q)) return
+
     const key = `${device.id}|${selectedChannel}|${person || ''}|${(q || '').trim()}`
     if (chatCache.current.has(key)) {
-      setMessages(chatCache.current.get(key))
+      const cached = chatCache.current.get(key)
+      setMessages(cached.messages)
+      setChatType(cached.chat_type)
       return
     }
+
     setLoadingChat(true)
     try {
       const res = await window.api.analytics.getChatDetail({
         analytic_id: analysisId,
-        person_name: person || undefined, // minimal salah satu: person_name atau search
-        platform: selectedChannel, // optional tapi kita kirim agar tepat
+        person_name: person || undefined,
+        platform: selectedChannel,
         device_id: device.id,
         search: (q || '').trim() || undefined
       })
-      console.log('chat detail : ', res)
-      const msgs = toArray(res?.data?.chat_messages).map((m) => ({
-        // Tampilan bubble sederhana
-        time: s(m?.timestamp || m?.times),
-        from: s(m?.direction) === 'Outgoing' ? 'Device' : 'Other',
-        text: s(m?.message_text || '')
-      }))
-      chatCache.current.set(key, msgs)
+
+      console.log('chat detail (updated parsing): ', res)
+
+      // simpan tipe chat (One On One, Group, Broadcast)
+      const chatTypeRes = res?.data?.chat_type || ''
+      setChatType(chatTypeRes)
+
+      // conversation_history adalah ARRAY, tiap block punya .messages[]
+      const blocks = toArray(res?.data?.conversation_history)
+
+      const msgs = blocks.flatMap((block) =>
+        toArray(block?.messages).map((m) => ({
+          sender: s(m?.sender),
+          sender_id: s(m?.sender_id),
+          text: s(m?.message_text || ''),
+          from: s(m?.direction) === 'Outgoing' ? 'Device' : 'Other',
+
+          // Time: ambil dari block timestamp atau block.times
+          time: block?.times
+            ? s(block?.times)
+            : block?.timestamp
+              ? new Date(block.timestamp).toLocaleTimeString('id-ID', {
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })
+              : ''
+        }))
+      )
+
+      chatCache.current.set(key, {
+        messages: msgs,
+        chat_type: chatTypeRes
+      })
+
       setMessages(msgs)
     } catch (e) {
       setMessages([])
@@ -478,13 +520,13 @@ export default function DeepCommunicationPage() {
               {/* Header tabel */}
               <div className="mt-4 border flex text-[14px]" style={{ borderColor: COLORS.border }}>
                 <div
-                  className="flex-1 px-4 py-2 font-[Aldrich]"
+                  className="flex-1 px-4 py-2 font-[Aldrich] font-bold"
                   style={{ background: COLORS.headerBg, color: COLORS.gold }}
                 >
-                  Person
+                  Person / Groups
                 </div>
                 <div
-                  className="w-32 px-4 py-2 font-[Aldrich] text-right"
+                  className="w-32 px-4 py-2 font-[Aldrich] text-right font-bold"
                   style={{ background: COLORS.headerBg, color: COLORS.gold }}
                 >
                   Intensity
@@ -561,12 +603,17 @@ export default function DeepCommunicationPage() {
               {loadingChat ? (
                 <ChatSkeleton />
               ) : (
-                <div className="mt-3 max-h-[480px] overflow-y-auto space-y-3 px-1">
+                <div className="mt-3 max-h-[550px] overflow-y-auto space-y-3 px-1">
                   {filteredMessages.length === 0 && (
                     <div className="text-sm opacity-60 px-2">Tidak ada chat history.</div>
                   )}
                   {filteredMessages.map((m, i) => {
-                    const isDevice = s(m.from).toLowerCase() === 'device'
+                    const fromValue = s(m.from || '').toLowerCase()
+                    const isDevice = fromValue === 'device'
+
+                    const typeGroup = ['group', 'broadcast', 'channel'] // dijadikan lowercase semua
+                    const chatTypeLower = s(chatType || '').toLowerCase() // chatType lowercase
+
                     return (
                       <div key={i} className={`flex ${isDevice ? 'justify-end' : 'justify-start'}`}>
                         <div
@@ -576,9 +623,20 @@ export default function DeepCommunicationPage() {
                             background: isDevice ? COLORS.headerBg : '#2B394E'
                           }}
                         >
+                          {chatTypeLower && typeGroup.includes(chatTypeLower) && (
+                            <div
+                              style={{ color: getSenderColor(m?.sender_id) }}
+                              className="flex justify-between text-[12px] mb-1 gap-5"
+                            >
+                              <span>{m?.sender ?? 'Unknown'}</span>
+                              <span>{m?.sender_id ?? ''}</span>
+                            </div>
+                          )}
+
                           <div className="text-[14px] leading-snug whitespace-normal wrap-break-word">
                             {s(m.text)}
                           </div>
+
                           <div className="text-[11px] opacity-60 mt-1 text-right">{s(m.time)}</div>
                         </div>
                       </div>

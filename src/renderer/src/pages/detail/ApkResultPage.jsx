@@ -62,6 +62,7 @@ export default function ApkResultPage() {
 
         if (mounted) {
           setResult({ malware_scoring: scoring, permissions: perms })
+          setSummary(data?.summary)
         }
       } catch (e) {
         const msg =
@@ -113,7 +114,7 @@ export default function ApkResultPage() {
   )
   const handleSummaryAction = () => {
     if (!isEditing) return setIsEditing(true)
-    // TODO: kalau mau simpan ke server: window.api.report.saveSummary({ analytic_id: analyticId, summary })
+    window.api.report.saveSummary({ analytic_id: analyticId, summary })
     setIsEditing(false)
   }
 
