@@ -34,7 +34,7 @@
 /* ============================================================
    📄 BASE GLOBALS
    ============================================================ */
-html, body, #root { height: 100%; }
+html, body, #root { height: 100%; overflow: hidden !important; }
 
 body {
   background-color: var(--bg);

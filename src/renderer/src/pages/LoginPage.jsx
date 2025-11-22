@@ -22,13 +22,12 @@ export default function LoginPage() {
       setError(errMsg || 'Login gagal')
       return
     }
-    // kalau ada rute asal (ketika guard me-redirect), balikin ke sana; else → /analytics
     const to = location.state?.from?.pathname || '/analytics'
     nav(to, { replace: true })
   }
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center px-4">
+    <div className="fixed inset-0 w-full h-full flex items-center justify-center overflow-hidden px-4">
       {/* CARD UTAMA */}
       <div
         className="relative rounded-[18px] overflow-hidden"
