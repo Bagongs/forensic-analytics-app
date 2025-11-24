@@ -260,7 +260,14 @@ export default function AnalyticsPage() {
                 </div>
 
                 {/* Scroll body only */}
-                <div className="2xl:max-h-[650px] max-h-[550px] bg-[#111720] overflow-y-auto divide-y divide-(--border) scrollbar-thin scrollbar-thumb-[#394F6F] scrollbar-track-transparent">
+                <div
+                  className="
+                  max-h-[550px] 2xl:max-h-[600px]
+                  [@media(min-width:2560px)_and_(max-height:1500px)]:max-h-[900px]
+                  overflow-y-auto divide-y bg-[#111720] divide-(--border)
+                  scrollbar-thin scrollbar-thumb-[#394F6F] scrollbar-track-transparent
+                  "
+                >
                   {uploadedRows.length === 0 && (
                     <div className="px-4 py-6 text-sm text-center text-(--dim)">
                       Belum ada file di server.
@@ -405,7 +412,14 @@ export default function AnalyticsPage() {
               </div>
 
               {/* Scroll body only */}
-              <div className="2xl:max-h-[650px] max-h-[550px] overflow-y-auto divide-y bg-[#111720] divide-(--border) scrollbar-thin scrollbar-thumb-[#394F6F] scrollbar-track-transparent ">
+              <div
+                className="
+                max-h-[550px] 2xl:max-h-[600px]
+                [@media(min-width:2560px)_and_(max-height:1500px)]:max-h-[900px]
+                bg-[#111720] overflow-y-auto divide-y divide-(--border)
+                scrollbar-thin scrollbar-thumb-[#394F6F] scrollbar-track-transparent
+                "
+              >
                 {filteredHistory.length === 0 && (
                   <div className="px-4 py-6 text-sm text-center text-(--dim)">
                     Belum ada history.

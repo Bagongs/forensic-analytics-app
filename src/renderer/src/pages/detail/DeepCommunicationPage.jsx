@@ -13,6 +13,7 @@ import { extractHttpMessage } from '@renderer/utils/httpError'
 import { TbFileExport } from 'react-icons/tb'
 import { LiaEditSolid } from 'react-icons/lia'
 import { FaRegSave } from 'react-icons/fa'
+import { IoIosArrowRoundBack } from 'react-icons/io'
 
 import exportBg from '@renderer/assets/image/export.svg'
 import editBg from '@renderer/assets/icons/edit.svg'
@@ -388,10 +389,14 @@ export default function DeepCommunicationPage() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => nav('/analytics', { replace: true })}
-            className="text-[#EDC702] text-[18px] font-[Aldrich] hover:opacity-80"
-            title="Back to Analytics"
+            className="flex items-center justify-center w-[46px] h-[46px] hover:opacity-80 transition"
+            aria-label="Back"
           >
-            ←
+            <IoIosArrowRoundBack
+              color="#EDC702"
+              size={46} // ukuran icon
+              style={{ marginLeft: '-4px' }}
+            />
           </button>
           <h1 className="font-[Aldrich] text-[22px] tracking-wide text-white">
             DEEP COMMUNICATION ANALYTICS{selectedChannel ? ` — ${selectedChannel}` : ''}

@@ -93,7 +93,7 @@ export default function UserManagement() {
             onClick={() => nav('/analytics')}
             className="inline-flex items-center gap-2 hover:opacity-90"
           >
-            <img src={backIcon} alt="Back" className="w-5 h-5" />
+            <img src={backIcon} alt="Back" className="w-12 h-12" />
             <span className="font-[Aldrich] text-2xl tracking-[0.15em]">USER MANAGEMENT</span>
           </button>
         </div>

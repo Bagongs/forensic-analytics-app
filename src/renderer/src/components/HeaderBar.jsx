@@ -41,26 +41,53 @@ export default function HeaderBar() {
     String(safeUser.role).toLowerCase() === 'admin' &&
     String(safeUser.tag || '').toLowerCase() === 'admin'
 
-  // Password display (kalau mau benar2 show password, boleh isi user.password di store)
+  // Password display
   const masked = '••••••••••••••••'
   const displayPassword = showPassword ? safeUser.password || masked : masked
 
   return (
     <>
-      <div className="w-full md:h-16 lg:h-32 relative overflow-x-hidden">
+      {/* ===================== HEADER BAR ===================== */}
+      <div
+        className="
+          w-full md:h-16 lg:h-[100px] relative overflow-x-hidden
+          /* 27” QHD (2560×1440): header lebih tinggi */
+          [@media(min-width:2560px)_and_(max-height:1500px)]:lg:h-32
+        "
+      >
         <img
           src={headerImg}
           alt=""
           className="absolute top-0 left-0 w-screen h-auto object-cover -z-10"
         />
-        <div className="flex justify-end items-center relative 2xl:mt-10 mt-2 mr-3.5">
+
+        {/* right user area */}
+        <div
+          className="
+            flex justify-end items-center relative mt-2 mr-1 2xl:mt-5
+            /* 27”: posisi user naik & margin kanan lebih besar */
+            [@media(min-width:2560px)_and_(max-height:1500px)]:mr-3.5
+            [@media(min-width:2560px)_and_(max-height:1500px)]:2xl:mt-10
+          "
+        >
           <button
             ref={btnRef}
             onClick={() => setOpen((v) => !v)}
             className="flex self-end justify-end items-center md:mt-6 mt-5 gap-2 text-white hover:opacity-90 select-none"
           >
-            <img src={userIcon} alt="User" className="w-9 h-9" />
+            {/* icon size default = 13.3”, 27” lebih besar */}
+            <img
+              src={userIcon}
+              alt="User"
+              className="
+                w-6 h-6
+                [@media(min-width:2560px)_and_(max-height:1500px)]:w-9
+                [@media(min-width:2560px)_and_(max-height:1500px)]:h-9
+              "
+            />
+
             <span className="2xl:text-lg text-sm tracking-tighter">{safeUser.fullname}</span>
+
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="ml-1">
               <path
                 d="M7 10l5 5 5-5"
@@ -71,14 +98,19 @@ export default function HeaderBar() {
               />
             </svg>
           </button>
-          {/* ===================== PROFILE DROPDOWN ===================== */}
         </div>
       </div>
 
+      {/* ===================== DROPDOWN ===================== */}
       {open && (
         <div
           ref={popRef}
-          className="absolute right-4 top-[95px] w-[320px] overflow-hidden text-[#E7E9EE] z-50 mt-2"
+          className="
+            absolute right-4 w-[320px] overflow-hidden text-[#E7E9EE] z-50 mt-2
+            top-[72px]
+            /* 27”: dropdown turun sedikit */
+            [@media(min-width:2560px)_and_(max-height:1500px)]:top-[110px]
+          "
           style={{
             background: '#151D28',
             border: '1.5px solid #C3CFE0',
@@ -88,12 +120,19 @@ export default function HeaderBar() {
         >
           {/* ===== TOP: user info ===== */}
           <div className="px-4 pt-4 pb-3">
-            <div className="font-semibold text-sm font-[Aldrich]">
+            <div
+              className="
+                font-semibold text-sm
+                /* default 13.3”: normal font */
+                /* 27”: pakai Aldrich */
+                [@media(min-width:2560px)_and_(max-height:1500px)]:font-[Aldrich]
+              "
+            >
               {safeUser.fullname || safeUser.email}
             </div>
             <div className="text-sm opacity-80">{safeUser.email}</div>
 
-            {/* Baris password hanya untuk admin (sesuai desain popup admin) */}
+            {/* Password row only for admin */}
             {isAdmin && (
               <button
                 type="button"
@@ -108,7 +147,7 @@ export default function HeaderBar() {
 
           <div className="h-px" style={{ background: '#C3CFE0' }} />
 
-          {/* ===== MENU: hanya admin yang dapat User management + password row di atas ===== */}
+          {/* ===== MENU: admin only ===== */}
           {isAdmin && (
             <>
               <button
@@ -118,7 +157,6 @@ export default function HeaderBar() {
                 }}
                 className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-[#1C2633]"
               >
-                {/* icon group user */}
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                   <path
                     d="M10 10a3 3 0 1 0-3-3 3 3 0 0 0 3 3Zm7 0a2.5 2.5 0 1 0-2.5-2.5A2.5 2.5 0 0 0 17 10Zm0 2a4.49 4.49 0 0 0-3.5 1.7 5.47 5.47 0 0 0-3.5-1.7C7.46 12 4 13.12 4 15.75V17h10v-1.25a3.26 3.26 0 0 1 .44-1.65A3.84 3.84 0 0 1 17 13.5 3.5 3.5 0 0 1 20.5 17H22v-.75C22 13.12 18.54 12 17 12Z"
@@ -131,7 +169,7 @@ export default function HeaderBar() {
             </>
           )}
 
-          {/* ===== ABOUT (selalu ada) ===== */}
+          {/* ===== ABOUT ===== */}
           <button
             onClick={() => {
               setOpen(false)
@@ -145,7 +183,7 @@ export default function HeaderBar() {
 
           <div className="h-px" style={{ background: '#C3CFE0' }} />
 
-          {/* ===== LOGOUT (selalu ada untuk semua role) ===== */}
+          {/* ===== LOGOUT ===== */}
           <button
             onClick={doLogout}
             className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-[#1C2633]"

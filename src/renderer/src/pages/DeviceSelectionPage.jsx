@@ -232,7 +232,7 @@ export default function DeviceSelectionPage() {
               aria-label="Back"
               title="Back"
             >
-              <img src={backIcon} alt="" className="w-[26px] h-[26px] opacity-90" />
+              <img src={backIcon} alt="" className="w-12 h-12 opacity-90" />
             </button>
 
             <h1
