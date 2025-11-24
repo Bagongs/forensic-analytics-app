@@ -13,6 +13,7 @@ import ApkAnalysisPage from './pages/detail/ApkAnalysisPage.jsx'
 import ApkResultPage from '@renderer/pages/detail/ApkResultPage'
 import SocialMediaCorrelationPage from '@renderer/pages/detail/SocialMediaCorrelationPage'
 import UserManagement from '@renderer/pages/UserManagement.jsx'
+import AboutPage from './pages/AboutPage.jsx'
 
 import RequireAuth from '@renderer/components/RequireAuth'
 import RequireAnalysis from '@renderer/components/guards/RequireAnalysis'
@@ -59,6 +60,15 @@ function RouterRoot() {
         element={
           <RequireAuth>
             <UserManagement />
+          </RequireAuth>
+        }
+      />
+
+      <Route
+        path="/about"
+        element={
+          <RequireAuth>
+            <AboutPage />
           </RequireAuth>
         }
       />

@@ -4,6 +4,7 @@ import userIcon from '@renderer/assets/icons/user.svg'
 import { useAuth } from '@renderer/store/auth'
 import { useNavigate } from 'react-router-dom'
 import { LuEye, LuEyeOff } from 'react-icons/lu'
+import { MdOutlineInfo } from 'react-icons/md'
 
 export default function HeaderBar() {
   const nav = useNavigate()
@@ -73,6 +74,7 @@ export default function HeaderBar() {
           {/* ===================== PROFILE DROPDOWN ===================== */}
         </div>
       </div>
+
       {open && (
         <div
           ref={popRef}
@@ -126,6 +128,20 @@ export default function HeaderBar() {
               <div className="h-px" style={{ background: '#C3CFE0' }} />
             </>
           )}
+
+          {/* ===== ABOUT (selalu ada) ===== */}
+          <button
+            onClick={() => {
+              setOpen(false)
+              nav('/about')
+            }}
+            className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-[#1C2633]"
+          >
+            <MdOutlineInfo className="w-[18px] h-[18px] text-white" />
+            <span className="text-sm">About</span>
+          </button>
+
+          <div className="h-px" style={{ background: '#C3CFE0' }} />
 
           {/* ===== LOGOUT (selalu ada untuk semua role) ===== */}
           <button
