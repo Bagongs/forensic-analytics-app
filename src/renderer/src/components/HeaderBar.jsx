@@ -53,13 +53,13 @@ export default function HeaderBar() {
           alt=""
           className="absolute top-0 left-0 w-screen h-auto object-cover -z-10"
         />
-        <div className="flex justify-end items-center relative 2xl:mt-5 mt-2 mr-1">
+        <div className="flex justify-end items-center relative 2xl:mt-10 mt-2 mr-3.5">
           <button
             ref={btnRef}
             onClick={() => setOpen((v) => !v)}
             className="flex self-end justify-end items-center md:mt-6 mt-5 gap-2 text-white hover:opacity-90 select-none"
           >
-            <img src={userIcon} alt="User" className="w-6 h-6" />
+            <img src={userIcon} alt="User" className="w-9 h-9" />
             <span className="2xl:text-lg text-sm tracking-tighter">{safeUser.fullname}</span>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="ml-1">
               <path
@@ -78,7 +78,7 @@ export default function HeaderBar() {
       {open && (
         <div
           ref={popRef}
-          className="absolute right-4 top-[72px] w-[320px] overflow-hidden text-[#E7E9EE] z-50 mt-2"
+          className="absolute right-4 top-[95px] w-[320px] overflow-hidden text-[#E7E9EE] z-50 mt-2"
           style={{
             background: '#151D28',
             border: '1.5px solid #C3CFE0',
@@ -88,7 +88,9 @@ export default function HeaderBar() {
         >
           {/* ===== TOP: user info ===== */}
           <div className="px-4 pt-4 pb-3">
-            <div className="font-semibold text-sm">{safeUser.fullname || safeUser.email}</div>
+            <div className="font-semibold text-sm font-[Aldrich]">
+              {safeUser.fullname || safeUser.email}
+            </div>
             <div className="text-sm opacity-80">{safeUser.email}</div>
 
             {/* Baris password hanya untuk admin (sesuai desain popup admin) */}

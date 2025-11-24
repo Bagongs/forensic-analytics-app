@@ -188,7 +188,6 @@ export default function ApkResultPage() {
                 color="#EDC702"
                 size={46} // ukuran icon
                 style={{ marginLeft: '-4px' }}
-                // sedikit geser icon supaya benar-benar centering
               />
             </button>
 
@@ -270,13 +269,7 @@ export default function ApkResultPage() {
                 </div>
 
                 {/* TABLE */}
-                <div
-                  className="flex-1 p-2.5 min-w-0"
-                  style={{
-                    borderLeft: '2px solid #2A3A51',
-                    borderTop: '2px solid #232B63'
-                  }}
-                >
+                <div className="flex-1 min-w-0">
                   <div
                     className="flex-1 flex flex-col min-h-0 overflow-hidden max-h-full"
                     style={{ background: 'rgba(0,0,0,0.15)' }}
@@ -327,19 +320,29 @@ export default function ApkResultPage() {
         </div>
 
         {/* SUMMARY */}
-        <div className="px-[3vw] mt-[2vh] pb-[3vh]">
-          <SummaryBox
-            title="Summary"
-            value={summary}
-            onChange={setSummary}
-            placeholder="Click Add to write summary"
-            editable={isEditing}
-            actionLabel={actionLabel}
-            actionIcon={actionIcon}
-            actionBgImage={editBg}
-            actionOffset={{ top: 15, right: 24 }}
-            onAction={handleSummaryAction}
-          />
+        <div className="px-[3vw] mt-[2vh] pb-[3vh] flex justify-center">
+          <div
+            className="w-full"
+            style={{
+              width: 'min(1820px, 94vw)',
+              display: 'flex',
+              alignItems: 'stretch'
+            }}
+          >
+            <SummaryBox
+              title="Summary"
+              value={summary}
+              onChange={setSummary}
+              placeholder="Click Add to write summary"
+              editable={isEditing}
+              actionLabel={actionLabel}
+              actionIcon={actionIcon}
+              actionBgImage={editBg}
+              actionOffset={{ top: 15, right: 24 }}
+              onAction={handleSummaryAction}
+              className="w-full h-full"
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -348,63 +351,104 @@ export default function ApkResultPage() {
 
 /* ===================== TagButton ===================== */
 function TagButton({ label, numerator, denominator, active, onClick }) {
+  const base = {
+    position: 'relative',
+    display: 'block',
+    width: '100%',
+    padding: '14px 16px',
+    transition: 'transform 150ms ease, opacity 150ms ease',
+    outline: 'none',
+    fontFamily: 'Aldrich, sans-serif',
+    borderRadius: 0
+  }
+
+  const inactive = {
+    backgroundBlendMode: 'overlay',
+    borderColor: '#212D3E'
+  }
+  const activeOuter = {
+    background: 'linear-gradient(270deg, rgba(17, 24, 34, 0.7) 0%, rgba(17, 24, 34, 0.05) 28%)',
+    borderImageSource: 'linear-gradient(90deg, #143051 0%, #153354 40.98%, #153354 100%)',
+    borderImageSlice: 1,
+    borderImageWidth: 1,
+    borderRadius: 0
+  }
+
+  const innerBase = {
+    position: 'relative',
+    borderRadius: 0,
+    padding: '14px 18px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    textAlign: 'center',
+    minHeight: '72px'
+  }
+
+  const innerInactive = {
+    background: 'linear-gradient(180deg, #111720 0%, #111720 100%)',
+    backgroundBlendMode: 'overlay',
+    borderWidth: '2.15px 0 2.15px 0',
+    borderStyle: 'solid',
+    borderColor: '#212D3E'
+  }
+
+  const innerActive = {
+    background: 'linear-gradient(180deg, #111720 0%, #111720 100%)',
+    backgroundBlendMode: 'overlay',
+    borderWidth: '2.15px 0 2.15px 0',
+    borderStyle: 'solid',
+    borderColor: 'transparent',
+    borderImageSource: 'linear-gradient(90deg, #143051 0%, #153354 40.98%, #153354 100%)',
+    borderImageSlice: 1,
+    borderImageWidth: 1
+  }
+
+  const stripeLayer = {
+    position: 'absolute',
+    inset: 0,
+    borderRadius: 0,
+    pointerEvents: 'none',
+    zIndex: 0,
+    background: 'repeating-linear-gradient(-24deg, #171F2C 0 1px, transparent 1px 14px)'
+  }
+
+  const contentWrap = { position: 'relative', zIndex: 1 }
+
   return (
     <button
+      type="button"
+      aria-pressed={active}
       onClick={onClick}
-      className="relative group w-full text-left active:scale-[0.99] transition"
-      style={{
-        padding: '14px 16px',
-        borderRadius: 0,
-        border: active ? '1px solid transparent' : '1px solid #212D3E',
-        background: active
-          ? 'linear-gradient(270deg, rgba(17,24,34,0.7) 0%, rgba(17,24,34,0.05) 28%)'
-          : '#111720'
-      }}
+      className="group w-full text-left hover:opacity-95 focus:outline-none active:scale-[0.99]"
+      style={{ ...base, ...(active ? activeOuter : inactive) }}
     >
-      <div
-        style={{
-          padding: '14px 18px',
-          minHeight: '72px',
-          background: '#111720',
-          borderTop: active ? '2px solid transparent' : '2px solid #212D3E',
-          borderBottom: active ? '2px solid transparent' : '2px solid #212D3E',
-          borderImage: active ? 'linear-gradient(90deg,#143051,#153354)' : undefined,
-          borderImageSlice: 1,
-          position: 'relative'
-        }}
-      >
-        {active && (
-          <span
-            style={{
-              position: 'absolute',
-              inset: 0,
-              background: 'repeating-linear-gradient(-24deg,#171F2C 0 1px,transparent 1px 14px)'
-            }}
-          />
-        )}
+      {active && (
+        <span
+          aria-hidden
+          className="absolute top-0 -right-0.5 h-full w-1 bg-[#466086]"
+          style={{ boxShadow: '0 0 10px rgba(5,199,180,0.35)' }}
+        />
+      )}
 
-        <div style={{ position: 'relative', zIndex: 2, textAlign: 'center' }}>
-          <div className="text-white" style={{ fontWeight: 700, fontSize: 16 }}>
+      <div style={{ ...innerBase, ...(active ? innerActive : innerInactive) }}>
+        {active && <span aria-hidden style={stripeLayer} />}
+        <div style={contentWrap}>
+          <div
+            className="leading-none"
+            style={{ color: '#FFFFFF', fontSize: 16, fontWeight: 700, letterSpacing: '0.2px' }}
+          >
             {label}
           </div>
 
-          <div className="flex justify-center gap-1 mt-2">
-            <span style={{ color: '#ED4D4D', fontWeight: 700 }}>{numerator}</span>
-            <span style={{ color: 'rgba(255,255,255,0.85)' }}>/</span>
-            <span style={{ color: 'rgba(255,255,255,0.85)' }}>{denominator}</span>
+          <div className="mt-2 flex items-center justify-center gap-1">
+            <span style={{ color: '#ED4D4D', fontSize: 16, fontWeight: 700 }}>{numerator}</span>
+            <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: 16 }}>/</span>
+            <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: 16 }}>{denominator}</span>
           </div>
         </div>
       </div>
-
-      {active && (
-        <div
-          className="absolute top-0 -right-0.5 h-full w-1"
-          style={{
-            background: '#466086',
-            boxShadow: '0 0 10px rgba(5,199,180,0.35)'
-          }}
-        />
-      )}
     </button>
   )
 }

@@ -91,6 +91,7 @@ async function prefetchDetailSafe({ method, analytic_id }) {
     // APK: biasanya halaman detailnya fetch sendiri
   } catch (e) {
     console.warn('[prefetchDetailSafe] direct-fallback error:', e)
+    throw e
   }
 }
 
@@ -119,6 +120,21 @@ function normalizeUploadProgress(res) {
 function truncateText(text, max = 16) {
   if (!text) return '-'
   return text.length > max ? text.substring(0, max) + '...' : text
+}
+
+/* === 400 handler sederhana: hanya redirect halaman === */
+function handleAnalytics400Basic(server, ctx) {
+  if (!server || server.status !== 400) return false
+  const redirectTo = server?.data?.redirect_to || '/analytics/devices'
+
+  ctx.nav(redirectTo, {
+    state: {
+      analysisId: ctx.analysisId,
+      method: ctx.method,
+      analysisName: ctx.analysisName
+    }
+  })
+  return true
 }
 
 /* ===================================================== */
@@ -223,51 +239,125 @@ export default function AnalyticsPage() {
             </div>
 
             <div className="panel flex flex-col text-sm bg-[#111720]">
-              {/* Header */}
-              <div className="grid grid-cols-[150px_250px_1fr] text-sm bg-[#395070] text-[#EDC702] shrink-0">
-                <div className="px-4 py-3 font-semibold">Date</div>
-                <div className="px-4 py-3 font-semibold">File name</div>
-                <div className="px-4 py-3 font-semibold">Notes</div>
+              {/* === DESKTOP/TABLET TABLE (md+) === */}
+              <div className="hidden md:block">
+                {/* Header */}
+                <div className="overflow-x-auto">
+                  <div
+                    className="
+                      grid text-sm bg-[#395070] text-[#EDC702] shrink-0
+                      md:min-w-[760px]
+                      md:grid-cols-[140px_220px_240px_minmax(0,1fr)]
+                      [@media(min-width:2560px)_and_(max-height:1500px)]:min-w-[1100px]
+                      [@media(min-width:2560px)_and_(max-height:1500px)]:grid-cols-[220px_320px_360px_minmax(0,1fr)]
+                    "
+                  >
+                    <div className="px-4 py-3 font-semibold">Date</div>
+                    <div className="px-4 py-3 font-semibold">File Name</div>
+                    <div className="px-4 py-3 font-semibold">Method</div>
+                    <div className="px-4 py-3 font-semibold">Notes</div>
+                  </div>
+                </div>
+
+                {/* Scroll body only */}
+                <div className="2xl:max-h-[650px] max-h-[550px] bg-[#111720] overflow-y-auto divide-y divide-(--border) scrollbar-thin scrollbar-thumb-[#394F6F] scrollbar-track-transparent">
+                  {uploadedRows.length === 0 && (
+                    <div className="px-4 py-6 text-sm text-center text-(--dim)">
+                      Belum ada file di server.
+                    </div>
+                  )}
+
+                  {uploadedRows.map((row) => {
+                    const id =
+                      row.id ?? row.file_id ?? row.upload_id ?? `${row.file_name}-${row.created_at}`
+                    const date = row.created_at ?? row.date ?? row.uploaded_at
+                    const fileName = row.file_name ?? row.name ?? 'Unnamed'
+                    const methodStr = row.method ?? row.methodLabel ?? '-'
+                    const notes = row.notes ?? ''
+
+                    return (
+                      <div key={id} className="overflow-x-auto">
+                        <div
+                          className="
+                            grid items-center hover:bg-[#0f1520]
+                            md:min-w-[760px]
+                            md:grid-cols-[140px_220px_240px_minmax(0,1fr)]
+                            [@media(min-width:2560px)_and_(max-height:1500px)]:min-w-[1100px]
+                            [@media(min-width:2560px)_and_(max-height:1500px)]:grid-cols-[220px_320px_360px_minmax(0,1fr)]
+                          "
+                          style={{ minHeight: 52 }}
+                        >
+                          <div className="px-4 py-3">{formatDate(date)}</div>
+
+                          <div className="px-4 py-3 truncate" title={fileName}>
+                            {truncateText(fileName, 20)}
+                          </div>
+
+                          <div className="px-4 py-3 truncate" title={methodStr}>
+                            {truncateText(methodStr, 22)}
+                          </div>
+
+                          <div
+                            className="px-4 py-3 overflow-hidden whitespace-nowrap"
+                            title={notes || '-'}
+                          >
+                            {truncateText(notes, 24)}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
 
-              {/* Scroll body only */}
-              <div className="2xl:max-h-[650px] max-h-[550px] bg-[#111720] overflow-y-auto divide-y divide-(--border) scrollbar-thin scrollbar-thumb-[#394F6F] scrollbar-track-transparent">
-                {uploadedRows.length === 0 && (
-                  <div className="px-4 py-6 text-sm text-center text-(--dim)">
-                    Belum ada file di server.
-                  </div>
-                )}
-
-                {uploadedRows.map((row) => {
-                  const id =
-                    row.id ?? row.file_id ?? row.upload_id ?? `${row.file_name}-${row.created_at}`
-                  const date = row.created_at ?? row.date ?? row.uploaded_at
-                  const fileName = row.file_name ?? row.name ?? 'Unnamed'
-                  const notes = row.notes ?? ''
-
-                  return (
-                    <div
-                      key={id}
-                      className="grid grid-cols-[150px_250px_1fr] items-center hover:bg-[#0f1520]"
-                      style={{ minHeight: 52 }}
-                    >
-                      <div className="px-4 py-3">{formatDate(date)}</div>
-
-                      {/* File name dengan truncate + tooltip */}
-                      <div className="px-4 py-3 truncate" title={fileName}>
-                        {truncateText(fileName, 20)}
-                      </div>
-
-                      {/* Notes dengan truncate + tooltip */}
-                      <div
-                        className="px-4 py-3 overflow-hidden whitespace-nowrap"
-                        title={notes || '-'}
-                      >
-                        {truncateText(notes, 20)}
-                      </div>
+              {/* === MOBILE VIEW (below md): card list === */}
+              <div className="md:hidden">
+                <div className="max-h-[550px] overflow-y-auto divide-y divide-(--border) scrollbar-thin scrollbar-thumb-[#394F6F] scrollbar-track-transparent">
+                  {uploadedRows.length === 0 && (
+                    <div className="px-4 py-6 text-sm text-center text-(--dim)">
+                      Belum ada file di server.
                     </div>
-                  )
-                })}
+                  )}
+
+                  {uploadedRows.map((row) => {
+                    const id =
+                      row.id ?? row.file_id ?? row.upload_id ?? `${row.file_name}-${row.created_at}`
+                    const date = row.created_at ?? row.date ?? row.uploaded_at
+                    const fileName = row.file_name ?? row.name ?? 'Unnamed'
+                    const methodStr = row.method ?? row.methodLabel ?? '-'
+                    const notes = row.notes ?? ''
+
+                    return (
+                      <div key={id} className="p-4 space-y-2 hover:bg-[#0f1520]">
+                        <div className="flex gap-2">
+                          <div className="w-[90px] text-[#EDC702] font-semibold">Date</div>
+                          <div className="text-white/90">{formatDate(date)}</div>
+                        </div>
+
+                        <div className="flex gap-2">
+                          <div className="w-[90px] text-[#EDC702] font-semibold">File</div>
+                          <div className="text-white/90 truncate" title={fileName}>
+                            {truncateText(fileName, 40)}
+                          </div>
+                        </div>
+
+                        <div className="flex gap-2">
+                          <div className="w-[90px] text-[#EDC702] font-semibold">Method</div>
+                          <div className="text-white/90 truncate" title={methodStr}>
+                            {truncateText(methodStr, 40)}
+                          </div>
+                        </div>
+
+                        <div className="flex gap-2">
+                          <div className="w-[90px] text-[#EDC702] font-semibold">Notes</div>
+                          <div className="text-white/90 truncate" title={notes || '-'}>
+                            {truncateText(notes, 60)}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             </div>
           </section>
@@ -300,10 +390,12 @@ export default function AnalyticsPage() {
             </div>
 
             <div className="panel flex flex-col bg-[#111720] mt-3.5">
-              {/* Header */}
               <div
-                className="grid text-sm bg-[#395070] text-[#EDC702] shrink-0 "
-                style={{ gridTemplateColumns: '120px 180px 160px minmax(0,1fr) 120px' }}
+                className="
+                  grid text-sm bg-[#395070] text-[#EDC702] shrink-0
+                  md:grid-cols-[120px_180px_160px_minmax(0,1fr)_120px]
+                  [@media(min-width:2560px)_and_(max-height:1500px)]:md:grid-cols-[120px_300px_330px_minmax(0,1fr)_140px]
+                "
               >
                 <div className="px-4 py-3 font-semibold">Date</div>
                 <div className="px-4 py-3 font-semibold">Analytics Name</div>
@@ -320,24 +412,36 @@ export default function AnalyticsPage() {
                   </div>
                 )}
                 {filteredHistory.map((row) => {
-                  const date = row.created_at ?? row.date
                   const notes = row.notes ?? ''
                   const id = row.id ?? row.analytic_id ?? row.analysis_id
                   const name = row.name ?? row.analytic_name ?? 'Untitled'
                   const methodStr = row.method ?? row.methodLabel ?? ''
                   const target = routeForMethod(methodStr)
 
-                  const goDetail = () => {
+                  const goDetail = async () => {
                     if (!target || !id) return
-                    prefetchDetailSafe({ method: methodStr, analytic_id: id }).catch((e) =>
-                      console.warn('[goDetail] prefetch error:', e)
-                    )
+
+                    try {
+                      await prefetchDetailSafe({ method: methodStr, analytic_id: id })
+                    } catch (e) {
+                      const server = e?.response?.data
+                      const handled = handleAnalytics400Basic(server, {
+                        nav,
+                        analysisId: id,
+                        method: methodStr,
+                        analysisName: name
+                      })
+                      if (handled) return
+                      console.warn('[goDetail] prefetch error:', server || e)
+                    }
+
                     try {
                       sessionStorage.setItem(
                         'analysis.context',
                         JSON.stringify({ analysisId: id, method: methodStr })
                       )
                     } catch {}
+
                     startTransition(() => {
                       nav(target, {
                         state: { analysisId: id, method: methodStr, analysisName: name }
@@ -358,28 +462,29 @@ export default function AnalyticsPage() {
                   return (
                     <div
                       key={id}
-                      className="grid items-center text-sm hover:bg-[#0f1520] mt-1"
-                      style={{
-                        gridTemplateColumns: '120px 180px 160px minmax(0,1fr) 120px',
-                        minHeight: 52
-                      }}
+                      className="
+                        grid items-center text-sm hover:bg-[#0f1520] mt-1
+                        md:grid-cols-[120px_180px_160px_minmax(0,1fr)_120px]
+                        [@media(min-width:2560px)_and_(max-height:1500px)]:md:grid-cols-[120px_300px_330px_minmax(0,1fr)_140px]
+                      "
+                      style={{ minHeight: 52 }}
                     >
                       {/* Date */}
                       <div className="px-4 truncate">{row.date || formatDate(row.created_at)}</div>
 
-                      {/* Name (truncate + tooltip) */}
+                      {/* Name */}
                       <div className="px-4 truncate" title={name}>
-                        {truncateText(name)}
+                        {truncateText(name, 25)}
                       </div>
 
-                      {/* Method (truncate + tooltip) */}
+                      {/* Method */}
                       <div className="px-3 truncate" title={methodStr}>
-                        {truncateText(methodStr)}
+                        {truncateText(methodStr, 40)}
                       </div>
 
-                      {/* Notes (truncate + tooltip) */}
+                      {/* Summary */}
                       <div className="px-4 overflow-hidden whitespace-nowrap" title={notes || '-'}>
-                        {truncateText(notes)}
+                        {truncateText(notes, 30)}
                       </div>
 
                       {/* Actions */}

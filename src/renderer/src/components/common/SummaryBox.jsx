@@ -2,6 +2,12 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
+/**
+ * SummaryBox
+ * - Tombol action (Add/Edit/Save) default ukuran ~93.62 x 41.53 px (Figma),
+ *   tapi responsif via clamp().
+ * - actionSize.w/h boleh number (px) ATAU string CSS (mis. 'clamp(...)').
+ */
 export default function SummaryBox({
   title = 'Summary',
   value = '',
@@ -11,7 +17,13 @@ export default function SummaryBox({
   onAction,
   actionIcon = null,
   actionBgImage = null,
-  actionSize = { w: 70, h: 27 },
+
+  // default responsif target Figma
+  actionSize = {
+    w: 'clamp(70px, 5.2vw, 93.6227px)',
+    h: 'clamp(30px, 3vw, 41.5319px)'
+  },
+
   actionOffset = { top: 15, right: 24 },
   editable = true,
   rowsMin = 3,
@@ -30,7 +42,7 @@ export default function SummaryBox({
   const textRef = useRef(null)
   const boxRef = useRef(null)
 
-  // autosize textarea
+  // ========== AUTOSIZE TEXTAREA ==========
   useEffect(() => {
     if (!textRef.current) return
     const el = textRef.current
@@ -43,7 +55,7 @@ export default function SummaryBox({
     if (editable && textRef.current) textRef.current.focus()
   }, [editable])
 
-  // ukur container untuk SVG border
+  // ========== UKUR CONTAINER UNTUK SVG BORDER ==========
   const [size, setSize] = useState({ w: 0, h: 0 })
   useLayoutEffect(() => {
     if (!boxRef.current) return
@@ -66,7 +78,11 @@ export default function SummaryBox({
     ${borderW}px ${Math.max(0, cut - borderW)}px
   )`
 
-  const paddingRight = onAction ? actionSize.w + 24 : undefined
+  // ====== SAFE NUMERIC WIDTH FOR PADDING RIGHT ======
+  const FALLBACK_W = 93.6227
+  const actionWNum = typeof actionSize?.w === 'number' ? actionSize.w : FALLBACK_W
+  const paddingRight = onAction ? `${actionWNum + 24}px` : undefined
+
   const glowShadow = `0 0 14px ${hexToRgba(glowColor, glowShadowAlpha)}`
 
   return (
@@ -97,7 +113,8 @@ export default function SummaryBox({
         style={{
           background: gradient,
           clipPath: innerClip,
-          paddingRight
+          paddingRight,
+          boxShadow: glowShadow
         }}
       >
         {/* Header */}
@@ -112,7 +129,11 @@ export default function SummaryBox({
             placeholder={placeholder}
             rows={rowsMin}
             className="w-full resize-none bg-transparent outline-none font-[Noto Sans] text-[14px] text-[#E7E9EE] placeholder-[#9AA3B2]"
-            style={{ lineHeight: 1.5, overflow: 'hidden', minHeight: 36 }}
+            style={{
+              lineHeight: 1.5,
+              overflow: 'hidden',
+              minHeight: 36
+            }}
           />
         ) : (
           <p className="font-[Noto Sans] text-[14px] text-[#E7E9EE] whitespace-pre-wrap">
@@ -131,14 +152,13 @@ export default function SummaryBox({
               'flex items-center justify-center gap-2',
               'transition-all duration-200 ease-out',
               'hover:brightness-110',
-              'hover:[box-shadow:0_0_14px_rgba(255,255,255,0.7)] focus:[box-shadow:0_0_14px_rgba(255,255,255,0.7)]',
               'focus:outline-none focus:ring-0 rounded'
             ].join(' ')}
             style={{
               top: actionOffset.top,
               right: actionOffset.right,
-              width: actionSize.w,
-              height: actionSize.h,
+              width: actionSize.w, // bisa number(px) atau string(clamp)
+              height: actionSize.h, // bisa number(px) atau string(clamp)
               border: 'none'
             }}
           >
@@ -147,7 +167,7 @@ export default function SummaryBox({
               <img
                 src={actionBgImage}
                 alt=""
-                className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
+                className="absolute inset-0 w-full h-full object-contain pointer-events-none select-none"
                 draggable="false"
               />
             )}

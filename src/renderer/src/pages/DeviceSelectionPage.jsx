@@ -50,6 +50,21 @@ async function prefetchAfterStart({ method, analytic_id }) {
   }
 }
 
+/* === 400 handler sederhana: hanya redirect halaman === */
+function handleAnalytics400Basic(server, ctx) {
+  if (!server || server.status !== 400) return false
+  const redirectTo = server?.data?.redirect_to || '/analytics/devices'
+
+  ctx.nav(redirectTo, {
+    state: {
+      analysisId: ctx.analysisId,
+      method: ctx.method,
+      analysisName: ctx.analysisName
+    }
+  })
+  return true
+}
+
 export default function DeviceSelectionPage() {
   const nav = useNavigate()
   const { state } = useLocation()
@@ -178,11 +193,22 @@ export default function DeviceSelectionPage() {
         console.warn('Detail route not implemented for method:', methodFromBE)
       }
     } catch (e) {
-      console.error('[startExtraction] error:', e?.response?.data || e)
-      alert(
-        e?.response?.data?.message ||
-          'Gagal memulai extraction. Cek koneksi dan pastikan minimal 2 device.'
-      )
+      const server = e?.response?.data
+
+      // ✅ jika 400 dari BE → langsung redirect ke devices
+      const handled = handleAnalytics400Basic(server, {
+        nav,
+        analysisId,
+        method,
+        analysisName: current?.name || state?.analysisName
+      })
+
+      if (!handled) {
+        console.error('[startExtraction] error:', server || e)
+        alert(
+          server?.message || 'Gagal memulai extraction. Cek koneksi dan pastikan minimal 2 device.'
+        )
+      }
     } finally {
       setLoadingOpen(false)
       startingRef.current = false
@@ -288,8 +314,6 @@ export default function DeviceSelectionPage() {
           <button
             className="w-[200px] h-14 2xl:w-[230px] 2xl:h-[77px] relative inline-flex items-center justify-center border-none disabled:opacity-50 disabled:pointer-events-auto"
             style={{
-              // width: 200,
-              // height: 56,
               borderRadius: 14,
               fontSize: 18,
               fontFamily: 'Aldrich, sans-serif',
