@@ -4,7 +4,7 @@
   "productName": "Data Analytics Platform",
   "description": "Data Analytics Platform Desktop Application",
   "main": "./out/main/index.js",
-  "author": "example.com",
+  "author": "Digital Forensics",
   "homepage": "https://your-domain.com",
 
   "scripts": {

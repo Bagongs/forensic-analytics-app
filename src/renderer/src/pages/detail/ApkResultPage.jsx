@@ -9,6 +9,7 @@ import SummaryBox from '@renderer/components/common/SummaryBox'
 import { TbFileExport } from 'react-icons/tb'
 import { LiaEditSolid } from 'react-icons/lia'
 import { FaRegSave } from 'react-icons/fa'
+import { IoIosArrowRoundBack } from 'react-icons/io'
 
 import editBg from '@renderer/assets/icons/edit.svg'
 import exportBg from '@renderer/assets/image/export.svg'
@@ -18,27 +19,24 @@ export default function ApkResultPage() {
   const nav = useNavigate()
   const { state } = useLocation()
 
-  // ===== ambil context dari state, lalu fallback ke sessionStorage agar survive refresh =====
   let analyticId = state?.analyticId ?? state?.analysisId ?? null
   let campaign = state?.campaign || 'APK Analysis'
   let fileName = state?.fileName || 'package.apk'
   let fileSize = state?.fileSize || '—'
+
   try {
     if (!analyticId) {
       const saved = JSON.parse(sessionStorage.getItem('apk.ctx') || '{}')
       analyticId = saved.analyticId ?? analyticId
       campaign = state?.campaign ?? saved.analytic_name ?? campaign
       fileName = state?.fileName ?? saved.file_name ?? fileName
-      // fileSize tidak disimpan di ctx; biarkan fallback '—'
     }
   } catch {}
 
-  // ===== state data =====
   const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState('')
-  const [result, setResult] = useState(null) // { malware_scoring, permissions: [...] }
+  const [result, setResult] = useState(null)
 
-  // ===== fetch data dari BE =====
   useEffect(() => {
     let mounted = true
     ;(async () => {
@@ -51,12 +49,9 @@ export default function ApkResultPage() {
       setErrorMsg('')
       try {
         const res = await window.api.apk.get({ analytic_id: analyticId })
-        // Normalisasi respons (fleksibel)
         const root = res?.data ?? res
-        // BE bisa kirim { data: {...} } atau langsung {...}
         const data = (root && root.data && typeof root.data === 'object' ? root.data : root) || {}
 
-        // Pastikan permissions array
         const perms = Array.isArray(data.permissions) ? data.permissions : []
         const scoring = Number(data.malware_scoring ?? 0)
 
@@ -75,35 +70,28 @@ export default function ApkResultPage() {
         if (mounted) setLoading(false)
       }
     })()
-    return () => {
-      mounted = false
-    }
+    return () => (mounted = false)
   }, [analyticId])
 
-  // ===== derive view data =====
   const malwareScore = Number(result?.malware_scoring ?? 0)
   const rows = useMemo(
     () => (Array.isArray(result?.permissions) ? result.permissions : []),
     [result]
   )
 
-  // tags (hitung dari permissions)
   const tags = useMemo(() => {
     if (!rows?.length) return { malicious: 0, common: 0, total: 0 }
 
     let malicious = 0
     let common = 0
-
     for (const r of rows) {
       const s = String(r?.status || '').toLowerCase()
       if (s === 'dangerous') malicious++
       else common++
     }
-
     return { malicious, common, total: rows.length }
   }, [rows])
 
-  // summary
   const [summary, setSummary] = useState('')
   const [isEditing, setIsEditing] = useState(false)
   const actionLabel = isEditing ? 'Save' : summary?.trim() ? 'Edit' : 'Add'
@@ -112,32 +100,25 @@ export default function ApkResultPage() {
   ) : (
     <LiaEditSolid className="text-[18px]" />
   )
+
   const handleSummaryAction = () => {
     if (!isEditing) return setIsEditing(true)
     window.api.report.saveSummary({ analytic_id: analyticId, summary })
     setIsEditing(false)
   }
 
-  // filter table by tag
   const [activeTag, setActiveTag] = useState('malicious')
 
   const filteredRows = useMemo(() => {
     if (!rows?.length) return []
-
     return rows.filter((r) => {
       const s = String(r?.status || '').toLowerCase()
       return activeTag === 'malicious' ? s === 'dangerous' : s !== 'dangerous'
     })
   }, [rows, activeTag])
 
-  // color score
-  const scoreColor = useMemo(() => {
-    if (malwareScore >= 60) return '#ED4D4D'
-    if (malwareScore >= 30) return '#EDC702'
-    return '#4ADE80'
-  }, [malwareScore])
+  const scoreColor = malwareScore >= 60 ? '#ED4D4D' : malwareScore >= 30 ? '#EDC702' : '#4ADE80'
 
-  // export (gunakan util yang sudah ada di project-mu)
   const handleExport = async () => {
     try {
       if (!analyticId) return window.print()
@@ -150,34 +131,32 @@ export default function ApkResultPage() {
     }
   }
 
-  // loading / error state
   if (loading) {
     return (
-      <div className="w-screen h-screen overflow-hidden text-white bg-[#101621]">
-        <HeaderBar />
-        <div className="h-[calc(100vh-64px)] grid place-items-center">
-          <div className="text-white/80">Loading APK analytic…</div>
+      <div className="w-screen h-screen text-white overflow-hidden relative">
+        <div className="relative z-9999">
+          <HeaderBar />
+        </div>
+        <div className="pt-16 h-[calc(100vh-64px)] grid place-items-center">
+          Loading APK analytic…
         </div>
       </div>
     )
   }
+
   if (errorMsg) {
     return (
-      <div className="w-screen h-screen overflow-hidden text-white bg-[#101621]">
-        <HeaderBar />
-        <div className="p-6">
+      <div className="w-screen h-screen text-white overflow-hidden relative">
+        <div className="relative z-9999">
+          <HeaderBar />
+        </div>
+
+        <div className="pt-16 p-6">
           <button
             onClick={() => nav(-1)}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded hover:bg-white/10"
+            className="inline-flex items-center gap-2 px-3 py-2 hover:bg-white/10"
           >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#EDC702"
-              strokeWidth="2"
-            >
+            <svg width="18" height="18" fill="none" stroke="#EDC702" strokeWidth="2">
               <path d="M15 18L9 12l6-6" />
             </svg>
             Back
@@ -189,288 +168,243 @@ export default function ApkResultPage() {
   }
 
   return (
-    <div className="w-screen h-screen overflow-hidden text-white ">
-      <HeaderBar />
-
-      {/* === TOP BAR === */}
-      <div className="flex items-center justify-between px-[3vw] pt-[2vh]">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => nav('/analytics', { replace: true })}
-            className="hover:opacity-80 transition"
-            aria-label="Back"
-          >
-            <svg
-              width="46"
-              height="46"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#EDC702"
-              strokeWidth="2"
-            >
-              <path d="M15 18L9 12l6-6" />
-            </svg>
-          </button>
-          <h1 className="font-[Aldrich] text-[1.3vw] tracking-wide">APK ANALYSIS</h1>
-        </div>
-
-        <button
-          onClick={handleExport}
-          className="relative flex items-center gap-2 h-[2.5vw] px-[1.5vw] font-[Aldrich] text-[#172C48] text-[0.8vw] overflow-hidden hover:brightness-110 hover:shadow-[0_0_12px_#EDC702] transition"
-        >
-          <img
-            src={exportBg}
-            alt="export"
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-          <TbFileExport className="text-[1vw] relative z-10" />
-          <span className="relative z-10">Export PDF</span>
-        </button>
+    <div className="w-screen h-screen text-white overflow-hidden relative">
+      {/* HeaderBar tanpa ketutup bg */}
+      <div className="relative z-9999">
+        <HeaderBar />
       </div>
 
-      {/* === MAIN CONTAINER === */}
-      {/* MAIN WRAPPER */}
-      <div className="px-[3vw] mt-[2vh] flex justify-center">
-        <div
-          className="p-[2vw] flex flex-col 2xl:h-[70vh] h-[65vh]"
-          style={{
-            width: '94vw',
-            // height: '70vh',
-            background: '#161E2A',
-            border: '1.5px solid #C3CFE0'
-          }}
-        >
-          {/* FILE HEADER */}
-          <div className="text-center mb-[1vh]">
-            <h2 className="text-[1.7vw] font-[Aldrich]">{fileName}</h2>
-            <div className="mt-[0.5vh] text-white/80 text-[0.9vw]">File size {fileSize}</div>
+      {/* Konten turun dari HeaderBar (kalau fixed) */}
+      <div className="pt-16 h-[calc(100vh-64px)] overflow-hidden">
+        {/* TOP BAR */}
+        <div className="flex items-center justify-between px-[3vw] pt-[2vh]">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => nav('/analytics', { replace: true })}
+              className="flex items-center justify-center w-[46px] h-[46px] hover:opacity-80 transition"
+              aria-label="Back"
+            >
+              <IoIosArrowRoundBack
+                color="#EDC702"
+                size={46} // ukuran icon
+                style={{ marginLeft: '-4px' }}
+                // sedikit geser icon supaya benar-benar centering
+              />
+            </button>
+
+            <h1 className="font-[Aldrich] text-[1.3vw] tracking-wide leading-none">APK ANALYSIS</h1>
           </div>
 
-          {/* PANEL DALAM */}
+          <button
+            onClick={handleExport}
+            className="relative flex items-center gap-2 h-[2.5vw] px-[1.5vw] text-[#172C48] font-[Aldrich] text-[0.8vw] overflow-hidden hover:brightness-110"
+          >
+            <img src={exportBg} className="absolute inset-0 w-full h-full object-cover" />
+            <TbFileExport className="text-[1vw] relative z-10" />
+            <span className="relative z-10">Export PDF</span>
+          </button>
+        </div>
+
+        {/* MAIN CONTAINER */}
+        <div className="px-[3vw] mt-[2vh] flex justify-center">
           <div
-            className="mx-auto rounded-md flex flex-col min-h-0"
+            className="flex flex-col"
             style={{
-              width: '81%',
-              height: '90%',
-              background: '#233043',
-              border: '1.5px solid #394F6F',
-              boxSizing: 'border-box',
-              padding: '1.2vw'
+              width: 'min(1820px, 94vw)',
+              height: 'min(599px, 65vh)',
+              background: '#161E2A',
+              border: '1.5px solid #C3CFE0',
+              padding: '1.8vw',
+              boxSizing: 'border-box'
             }}
           >
-            {/* Header */}
-            <div className="flex items-center justify-between pb-[1.2vh]">
-              <div className="text-white/85 text-[1vw] font-semibold">Tags</div>
-              <div className="text-white/85 text-[1vw] font-semibold">
-                Malware Probability:{' '}
-                <span className="font-bold" style={{ color: scoreColor }}>
-                  {malwareScore}%
-                </span>
-              </div>
+            {/* FILE HEADER kiri-kanan */}
+            <div className="flex items-center justify-between mb-[1vh]">
+              <h2 className="font-[Aldrich] text-[1.7vw]">{fileName}</h2>
+              <div className="text-white/80 text-[0.9vw]">File size {fileSize}</div>
             </div>
 
-            {/* Divider */}
-            <div className="w-full h-px" style={{ background: 'rgba(57,79,111,0.6)' }} />
-
-            {/* Split layout */}
-            <div className="flex gap-0.5 pt-[2vh] min-h-0 flex-1">
-              {/* LEFT: Tag Buttons */}
-              <div className="w-[22%] min-w-[13vw] flex flex-col gap-[2vh]">
-                <TagButton
-                  label="Malicious"
-                  numerator={tags.malicious}
-                  denominator={tags.total}
-                  active={activeTag === 'malicious'}
-                  onClick={() => setActiveTag('malicious')}
-                />
-                <TagButton
-                  label="Common"
-                  numerator={tags.common}
-                  denominator={tags.total}
-                  active={activeTag === 'common'}
-                  onClick={() => setActiveTag('common')}
-                />
+            {/* PANEL DALAM */}
+            <div
+              className="mx-auto rounded-md flex flex-col min-h-0"
+              style={{
+                width: 'min(1760px, 91vw)',
+                height: 'min(486px, 100%)',
+                background: '#233043',
+                border: '1.5px solid #394F6F',
+                padding: '1.2vw',
+                boxSizing: 'border-box'
+              }}
+            >
+              {/* TAG + SCORE */}
+              <div className="flex items-center justify-between pb-[1vh]">
+                <div className="text-white/85 text-[1vw] font-semibold">Tags</div>
+                <div className="text-white/85 text-[1vw] font-semibold">
+                  Malware Probability:{' '}
+                  <span className="font-bold" style={{ color: scoreColor }}>
+                    {malwareScore}%
+                  </span>
+                </div>
               </div>
 
-              {/* RIGHT: Table */}
-              <div
-                className="p-2.5"
-                style={{
-                  borderLeft: '2px solid #2A3A51',
-                  borderTop: '2px solid #232B63',
-                  borderRight: 'none',
-                  borderBottom: 'none',
-                  background: 'transparent'
-                }}
-              >
+              <div className="w-full h-px" style={{ background: 'rgba(57,79,111,0.6)' }} />
+
+              {/* SPLIT */}
+              <div className="flex gap-2 pt-[2vh] min-h-0 flex-1">
+                {/* LEFT TAGS */}
+                <div className="w-[22%] min-w-[220px] flex flex-col gap-[2vh]">
+                  <TagButton
+                    label="Malicious"
+                    numerator={tags.malicious}
+                    denominator={tags.total}
+                    active={activeTag === 'malicious'}
+                    onClick={() => setActiveTag('malicious')}
+                  />
+                  <TagButton
+                    label="Common"
+                    numerator={tags.common}
+                    denominator={tags.total}
+                    active={activeTag === 'common'}
+                    onClick={() => setActiveTag('common')}
+                  />
+                </div>
+
+                {/* TABLE */}
                 <div
-                  className="flex-1 flex flex-col min-h-0 overflow-hidden max-h-full"
+                  className="flex-1 p-2.5 min-w-0"
                   style={{
-                    borderLeft: 'none',
-                    borderTop: 'none',
-                    background: 'rgba(0,0,0,0.15)'
+                    borderLeft: '2px solid #2A3A51',
+                    borderTop: '2px solid #232B63'
                   }}
                 >
-                  {/* Header tabel */}
                   <div
-                    className="grid grid-cols-[20vw_1fr] px-[1vw] py-[0.6vw] text-[0.85vw] font-semibold border-b"
-                    style={{ background: '#395070', color: '#E9EFF6', borderColor: '#394F6F' }}
+                    className="flex-1 flex flex-col min-h-0 overflow-hidden max-h-full"
+                    style={{ background: 'rgba(0,0,0,0.15)' }}
                   >
-                    <div>Permission / Item</div>
-                    <div>Description</div>
-                  </div>
+                    {/* TABLE HEADER */}
+                    <div
+                      className="grid font-semibold border-b px-[1vw] py-[0.6vw] text-[0.85vw]"
+                      style={{
+                        gridTemplateColumns: 'minmax(300px, 360px) 1fr',
+                        background: '#395070',
+                        color: '#E9EFF6',
+                        borderColor: '#394F6F'
+                      }}
+                    >
+                      <div>Permission / Item</div>
+                      <div>Description</div>
+                    </div>
 
-                  {/* Body */}
-                  <div className="flex-1 overflow-auto min-h-0">
-                    {filteredRows.length ? (
-                      filteredRows.map((r, i) => (
-                        <div
-                          key={r.id ?? r.permission_id ?? i}
-                          className="grid grid-cols-[20vw_1fr] px-[1vw] py-[0.6vw] text-[0.85vw] border-b hover:bg-[#2C3A4D]/40 transition"
-                          style={{ borderColor: 'rgba(57,79,111,0.55)' }}
-                        >
-                          {/* ITEM */}
-                          <div className="pr-[0.8vw] whitespace-normal break-all leading-tight text-white">
-                            {r.item || r.permission || r.name || '-'}
+                    {/* TABLE BODY */}
+                    <div className="flex-1 overflow-auto min-h-0">
+                      {filteredRows.length ? (
+                        filteredRows.map((r, i) => (
+                          <div
+                            key={r.id ?? r.permission_id ?? i}
+                            className="grid px-[1vw] py-[0.6vw] border-b text-[0.85vw] hover:bg-[#2C3A4D]/40"
+                            style={{
+                              gridTemplateColumns: 'minmax(300px, 360px) 1fr',
+                              borderColor: 'rgba(57,79,111,0.55)'
+                            }}
+                          >
+                            <div className="text-white break-all leading-tight pr-3">
+                              {r.item || r.permission || r.name || '-'}
+                            </div>
+                            <div className="text-white/85 break-all leading-tight">
+                              {r.description || r.explain || r.desc || '-'}
+                            </div>
                           </div>
-
-                          {/* DESCRIPTION */}
-                          <div className="text-white/85 whitespace-normal break-all leading-tight">
-                            {r.description || r.explain || r.desc || '-'}
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="p-6 text-center text-white/70 text-sm">No findings.</div>
-                    )}
+                        ))
+                      ) : (
+                        <div className="p-6 text-center text-white/70 text-sm">No findings.</div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* SUMMARY BOX */}
-      <div className="px-[3vw] mt-[2vh] pb-[3vh]">
-        <SummaryBox
-          title="Summary"
-          value={summary}
-          onChange={setSummary}
-          placeholder="Click Add to write summary"
-          editable={isEditing}
-          actionLabel={actionLabel}
-          actionIcon={actionIcon}
-          actionBgImage={editBg}
-          // actionSize={{ w: 131.6, h: 58.4 }}
-          actionOffset={{ top: 15, right: 24 }}
-          onAction={handleSummaryAction}
-        />
+        {/* SUMMARY */}
+        <div className="px-[3vw] mt-[2vh] pb-[3vh]">
+          <SummaryBox
+            title="Summary"
+            value={summary}
+            onChange={setSummary}
+            placeholder="Click Add to write summary"
+            editable={isEditing}
+            actionLabel={actionLabel}
+            actionIcon={actionIcon}
+            actionBgImage={editBg}
+            actionOffset={{ top: 15, right: 24 }}
+            onAction={handleSummaryAction}
+          />
+        </div>
       </div>
     </div>
   )
 }
 
-/* ===================== TagButton (center text, stripe belakang) ===================== */
+/* ===================== TagButton ===================== */
 function TagButton({ label, numerator, denominator, active, onClick }) {
-  const base = {
-    position: 'relative',
-    display: 'block',
-    width: '100%',
-    padding: '14px 16px',
-    transition: 'transform 150ms ease, opacity 150ms ease',
-    outline: 'none',
-    fontFamily: 'Aldrich, sans-serif',
-    borderRadius: 0
-  }
-
-  const inactive = {
-    backgroundBlendMode: 'overlay',
-    borderColor: '#212D3E'
-  }
-  const activeOuter = {
-    background: 'linear-gradient(270deg, rgba(17, 24, 34, 0.7) 0%, rgba(17, 24, 34, 0.05) 28%)',
-    borderImageSource: 'linear-gradient(90deg, #143051 0%, #153354 40.98%, #153354 100%)',
-    borderImageSlice: 1,
-    borderImageWidth: 1,
-    borderRadius: 0
-  }
-
-  const innerBase = {
-    position: 'relative',
-    borderRadius: 0,
-    padding: '14px 18px',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    textAlign: 'center',
-    minHeight: '72px'
-  }
-
-  const innerInactive = {
-    background: 'linear-gradient(180deg, #111720 0%, #111720 100%)',
-    backgroundBlendMode: 'overlay',
-    borderWidth: '2.15px 0 2.15px 0',
-    borderStyle: 'solid',
-    borderColor: '#212D3E'
-  }
-
-  const innerActive = {
-    background: 'linear-gradient(180deg, #111720 0%, #111720 100%)',
-    backgroundBlendMode: 'overlay',
-    borderWidth: '2.15px 0 2.15px 0',
-    borderStyle: 'solid',
-    borderColor: 'transparent',
-    borderImageSource: 'linear-gradient(90deg, #143051 0%, #153354 40.98%, #153354 100%)',
-    borderImageSlice: 1,
-    borderImageWidth: 1
-  }
-
-  const stripeLayer = {
-    position: 'absolute',
-    inset: 0,
-    borderRadius: 0,
-    pointerEvents: 'none',
-    zIndex: 0,
-    background: 'repeating-linear-gradient(-24deg, #171F2C 0 1px, transparent 1px 14px)'
-  }
-
-  const contentWrap = { position: 'relative', zIndex: 1 }
-
   return (
     <button
-      type="button"
-      aria-pressed={active}
       onClick={onClick}
-      className="group w-full text-left hover:opacity-95 focus:outline-none active:scale-[0.99]"
-      style={{ ...base, ...(active ? activeOuter : inactive) }}
+      className="relative group w-full text-left active:scale-[0.99] transition"
+      style={{
+        padding: '14px 16px',
+        borderRadius: 0,
+        border: active ? '1px solid transparent' : '1px solid #212D3E',
+        background: active
+          ? 'linear-gradient(270deg, rgba(17,24,34,0.7) 0%, rgba(17,24,34,0.05) 28%)'
+          : '#111720'
+      }}
     >
-      {active && (
-        <span
-          aria-hidden
-          className="absolute top-0 -right-0.5 h-full w-1 bg-[#466086]"
-          style={{ boxShadow: '0 0 10px rgba(5,199,180,0.35)' }}
-        />
-      )}
+      <div
+        style={{
+          padding: '14px 18px',
+          minHeight: '72px',
+          background: '#111720',
+          borderTop: active ? '2px solid transparent' : '2px solid #212D3E',
+          borderBottom: active ? '2px solid transparent' : '2px solid #212D3E',
+          borderImage: active ? 'linear-gradient(90deg,#143051,#153354)' : undefined,
+          borderImageSlice: 1,
+          position: 'relative'
+        }}
+      >
+        {active && (
+          <span
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'repeating-linear-gradient(-24deg,#171F2C 0 1px,transparent 1px 14px)'
+            }}
+          />
+        )}
 
-      <div style={{ ...innerBase, ...(active ? innerActive : innerInactive) }}>
-        {active && <span aria-hidden style={stripeLayer} />}
-        <div style={contentWrap}>
-          <div
-            className="leading-none"
-            style={{ color: '#FFFFFF', fontSize: 16, fontWeight: 700, letterSpacing: '0.2px' }}
-          >
+        <div style={{ position: 'relative', zIndex: 2, textAlign: 'center' }}>
+          <div className="text-white" style={{ fontWeight: 700, fontSize: 16 }}>
             {label}
           </div>
 
-          <div className="mt-2 flex items-center justify-center gap-1">
-            <span style={{ color: '#ED4D4D', fontSize: 16, fontWeight: 700 }}>{numerator}</span>
-            <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: 16 }}>/</span>
-            <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: 16 }}>{denominator}</span>
+          <div className="flex justify-center gap-1 mt-2">
+            <span style={{ color: '#ED4D4D', fontWeight: 700 }}>{numerator}</span>
+            <span style={{ color: 'rgba(255,255,255,0.85)' }}>/</span>
+            <span style={{ color: 'rgba(255,255,255,0.85)' }}>{denominator}</span>
           </div>
         </div>
       </div>
+
+      {active && (
+        <div
+          className="absolute top-0 -right-0.5 h-full w-1"
+          style={{
+            background: '#466086',
+            boxShadow: '0 0 10px rgba(5,199,180,0.35)'
+          }}
+        />
+      )}
     </button>
   )
 }

@@ -15,14 +15,12 @@ export default function EditUserModal({ open, onClose, onSave, user }) {
   const [showPass, setShowPass] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
 
-  // snapshot nilai awal (untuk deteksi dirty)
   const [initialForm, setInitialForm] = useState({
     name: '',
     email: '',
     tag: ''
   })
 
-  // popup guard
   const [showUnsaved, setShowUnsaved] = useState(false)
   const [showIncomplete, setShowIncomplete] = useState(false)
 
@@ -46,7 +44,6 @@ export default function EditUserModal({ open, onClose, onSave, user }) {
     }
   }, [open, user])
 
-  // form dianggap "dirty" kalau beda dengan initial atau password field terisi
   const isDirty = useMemo(() => {
     return (
       name !== initialForm.name ||
@@ -57,37 +54,32 @@ export default function EditUserModal({ open, onClose, onSave, user }) {
     )
   }, [name, email, tag, password, confirmPassword, initialForm])
 
-  // validasi:
-  // - name & email wajib
-  // - password optional, tapi kalau diisi harus cocok dengan confirm
+  // kontrak: semua field wajib + password wajib min 8 & match
   const isValid = useMemo(() => {
-    if (!name.trim() || !email.trim()) return false
-    if (password || confirmPassword) {
-      if (!password.trim() || !confirmPassword.trim()) return false
-      if (password !== confirmPassword) return false
-    }
+    if (!name.trim() || !email.trim() || !tag.trim()) return false
+    if (!password.trim() || !confirmPassword.trim()) return false
+    if (password.length < 8) return false
+    if (password !== confirmPassword) return false
     return true
-  }, [name, email, password, confirmPassword])
+  }, [name, email, tag, password, confirmPassword])
 
-  // klik Cancel / X
   const handleRequestClose = () => {
-    if (isDirty) {
-      setShowUnsaved(true)
-    } else {
-      onClose?.()
-    }
+    if (isDirty) setShowUnsaved(true)
+    else onClose?.()
   }
 
-  // klik Save Changes
   const handleSave = () => {
     if (!isValid) {
       setShowIncomplete(true)
       return
     }
 
-    const patch = { name, email, tag }
-    if (password) {
-      patch.password = password
+    const patch = {
+      name,
+      email,
+      tag,
+      password,
+      confirm_password: confirmPassword
     }
 
     onSave(user.id, patch)
@@ -96,7 +88,6 @@ export default function EditUserModal({ open, onClose, onSave, user }) {
 
   return (
     <>
-      {/* ========= MODAL UTAMA: EDIT USER ========= */}
       <Modal
         open={open}
         title="Edit User"
@@ -111,13 +102,13 @@ export default function EditUserModal({ open, onClose, onSave, user }) {
           <FormLabel>Email *</FormLabel>
           <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" />
 
-          <FormLabel>Password</FormLabel>
+          <FormLabel>New Password *</FormLabel>
           <div className="relative">
             <Input
               type={showPass ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="New password (optional)"
+              placeholder="Min 8 characters"
             />
             <button
               type="button"
@@ -128,13 +119,13 @@ export default function EditUserModal({ open, onClose, onSave, user }) {
             </button>
           </div>
 
-          <FormLabel>Confirm Password</FormLabel>
+          <FormLabel>Confirm Password *</FormLabel>
           <div className="relative">
             <Input
               type={showConfirm ? 'text' : 'password'}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Re-enter new password"
+              placeholder="Re-enter password"
             />
             <button
               type="button"
@@ -145,32 +136,27 @@ export default function EditUserModal({ open, onClose, onSave, user }) {
             </button>
           </div>
 
-          <FormLabel>Tag</FormLabel>
+          <FormLabel>Tag *</FormLabel>
           <Input value={tag} onChange={(e) => setTag(e.target.value)} placeholder="Input tag" />
 
           <p className="text-xs text-white/60 pt-1">* Required fields</p>
         </div>
       </Modal>
 
-      {/* ========= MODAL UNSAVED CHANGES ========= */}
       <UnsavedChangesModal
         open={showUnsaved}
         onLeave={() => {
           setShowUnsaved(false)
           onClose?.()
         }}
-        onStay={() => {
-          setShowUnsaved(false)
-        }}
+        onStay={() => setShowUnsaved(false)}
       />
 
-      {/* ========= MODAL INCOMPLETE FORM ========= */}
       <IncompleteFormModal open={showIncomplete} onClose={() => setShowIncomplete(false)} />
     </>
   )
 }
 
-/* Helpers sama seperti versi kamu */
 function FormLabel({ children }) {
   return (
     <div className="text-xs font-semibold" style={{ color: 'var(--dim)' }}>

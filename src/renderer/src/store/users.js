@@ -21,7 +21,7 @@ export const useUsers = create((set, get) => ({
   // ===== LOAD USERS =====
   loadUsers: async () => {
     if (!window.api?.users?.getAll) return
-    set({ loading: true })
+    set({ loading: true, error: null })
 
     try {
       const res = await window.api.users.getAll({ skip: 0, limit: 100 })
@@ -62,23 +62,29 @@ export const useUsers = create((set, get) => ({
 
   // ===== UPDATE USER =====
   editUser: async (id, patch) => {
+    // kontrak: semua field wajib + password wajib min 8
+    if (!patch?.password || patch.password.length < 8) {
+      alert('Password wajib diisi (min 8 karakter) saat edit user.')
+      return
+    }
+    if (patch.password !== patch.confirm_password) {
+      alert('Confirm password tidak sama.')
+      return
+    }
+
     const payload = {
       fullname: patch.name,
       email: patch.email,
+      password: patch.password,
+      confirm_password: patch.confirm_password,
       tag: patch.tag
-    }
-    if (patch.password) {
-      payload.password = patch.password
-      payload.confirm_password = patch.password
-    } else {
-      payload.password = ''
-      payload.confirm_password = ''
     }
 
     try {
-      const res = await window.api.users.update(id, payload)
+      const res = await window.api.users.update({ id, payload })
+      const updated = mapServerUser(res?.data || {})
       set((s) => ({
-        users: s.users.map((u) => (u.id === id ? { ...u, ...mapServerUser(res?.data || {}) } : u))
+        users: s.users.map((u) => (u.id === id ? { ...u, ...updated } : u))
       }))
     } catch (err) {
       console.error(err)
@@ -89,7 +95,7 @@ export const useUsers = create((set, get) => ({
   // ===== DELETE USER =====
   removeUser: async (id) => {
     try {
-      await window.api.users.delete(id)
+      await window.api.users.delete({ id })
       set((s) => ({
         users: s.users.filter((u) => u.id !== id),
         total: Math.max(0, s.total - 1)
