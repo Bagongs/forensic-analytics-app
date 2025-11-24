@@ -50,6 +50,7 @@ export default function UserManagement() {
   const [pageSize, setPageSize] = useState(PAGE_SIZES[0])
   const [page, setPage] = useState(1)
   const [openAdd, setOpenAdd] = useState(false)
+  const [addKey, setAddKey] = useState(0) // ✅ NEW: force remount AddUserModal
   const [editingUser, setEditingUser] = useState(null)
   const [deleteUser, setDeleteUser] = useState(null)
 
@@ -118,7 +119,12 @@ export default function UserManagement() {
             />
           </div>
 
-          <MiniButton onClick={() => setOpenAdd(true)}>
+          <MiniButton
+            onClick={() => {
+              setAddKey((k) => k + 1) // ✅ NEW: reset form state tiap buka modal
+              setOpenAdd(true)
+            }}
+          >
             <MiniButtonContent bg={bgButton} text="+ Add User" textColor="text-black" />
           </MiniButton>
         </div>
@@ -227,7 +233,12 @@ export default function UserManagement() {
 
       {/* MODALS */}
       {openAdd && (
-        <AddUserModal open={openAdd} onClose={() => setOpenAdd(false)} onSave={addUser} />
+        <AddUserModal
+          key={addKey}
+          open={openAdd}
+          onClose={() => setOpenAdd(false)}
+          onSave={addUser}
+        />
       )}
 
       {editingUser && (

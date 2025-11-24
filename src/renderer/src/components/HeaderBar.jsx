@@ -47,7 +47,7 @@ export default function HeaderBar() {
 
   return (
     <>
-      <div className="w-full md:h-[84px] lg:h-[100px] relative overflow-x-hidden">
+      <div className="w-full md:h-16 lg:h-32 relative overflow-x-hidden">
         <img
           src={headerImg}
           alt=""

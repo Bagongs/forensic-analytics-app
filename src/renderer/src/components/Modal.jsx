@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 // src/renderer/src/components/Modal.jsx
 /* eslint-disable react/prop-types */
 import { useEffect, useRef, useId } from 'react'
@@ -22,52 +23,67 @@ export default function Modal({
   const didFocusRef = useRef(false)
   const titleId = useId()
 
-  // Focus handler
-  useEffect(() => {
-    if (!open) {
-      didFocusRef.current = false
-      return
-    }
-    if (didFocusRef.current) return
+  const focusFirst = () => {
+    if (!dialogRef.current) return
+
     if (initialFocusSelector) {
-      const el = dialogRef.current?.querySelector(initialFocusSelector)
+      const el = dialogRef.current.querySelector(initialFocusSelector)
       if (el) {
         el.focus()
         didFocusRef.current = true
         return
       }
     }
-    const active = document.activeElement
-    if (dialogRef.current?.contains(active)) {
-      didFocusRef.current = true
-      return
-    }
-    const first = dialogRef.current?.querySelector(
+
+    const first = dialogRef.current.querySelector(
       'input,select,textarea,button,[tabindex]:not([tabindex="-1"])'
     )
     first?.focus()
     didFocusRef.current = true
+  }
+
+  // Focus handler saat open
+  useEffect(() => {
+    if (!open) {
+      didFocusRef.current = false
+      return
+    }
+    if (didFocusRef.current) return
+    focusFirst()
   }, [open, initialFocusSelector])
 
-  // Escape key + body scroll lock + (opsional) Enter-to-confirm
+  // ✅ NEW: refocus lagi kalau window balik focus (habis notif/dialog electron)
+  useEffect(() => {
+    if (!open) return
+    const onWinFocus = () => {
+      didFocusRef.current = false
+      requestAnimationFrame(() => focusFirst())
+    }
+    window.addEventListener('focus', onWinFocus)
+    return () => window.removeEventListener('focus', onWinFocus)
+  }, [open, initialFocusSelector])
+
+  // Escape key + body scroll lock + Enter-to-confirm
   useEffect(() => {
     if (!open) return
     const onKey = (e) => {
       if (e.key === 'Escape' && closable) onCancel?.()
-      // NEW: Enter untuk confirm (kecuali sedang disable)
+
       if (e.key === 'Enter' && onConfirm && !disableConfirm) {
-        // hindari double submit kalau ada form yang submit default
         const tag = document.activeElement?.tagName?.toLowerCase()
         const isTextInput = ['input', 'textarea', 'select'].includes(tag)
+
         if (!isTextInput || (isTextInput && e.ctrlKey)) {
           e.preventDefault()
           onConfirm()
         }
       }
     }
+
     document.addEventListener('keydown', onKey)
     const prevOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
+
     return () => {
       document.removeEventListener('keydown', onKey)
       document.body.style.overflow = prevOverflow
@@ -76,7 +92,6 @@ export default function Modal({
 
   if (!open) return null
 
-  // ukuran fleksibel termasuk xl
   const width =
     size === 'sm'
       ? 'w-[420px]'
@@ -96,7 +111,6 @@ export default function Modal({
       role="dialog"
       aria-modal="true"
       aria-labelledby={title ? titleId : undefined}
-      // NEW: klik area overlay buat close hanya kalau closable
       onClick={() => {
         if (closable) onCancel?.()
       }}
@@ -108,7 +122,6 @@ export default function Modal({
         ref={dialogRef}
         className={clsx('relative rounded-[14px] overflow-visible shadow-xl', width, className)}
         style={{ background: '#151D28' }}
-        // NEW: supaya klik di dalam tidak menutup modal
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -134,7 +147,7 @@ export default function Modal({
           )}
         </div>
 
-        {/* Body (scrollable jika isi tinggi) */}
+        {/* Body */}
         <div className="p-6 max-h-[70vh] overflow-auto">{children}</div>
 
         {/* Footer */}

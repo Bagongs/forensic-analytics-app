@@ -12,14 +12,6 @@ import bgMonitor from '@renderer/assets/image/bg-license-monitor.svg?url'
 import bgForensic from '@renderer/assets/image/bg-license-forensic-data-analysis.svg'
 import bgReport from '@renderer/assets/image/bg-license-report-generator.svg'
 
-console.log({
-  bgTop,
-  bgApk,
-  bgMonitor,
-  bgForensic,
-  bgReport
-})
-
 function LicenseCard({ title, code, bg, className = '' }) {
   return (
     <div

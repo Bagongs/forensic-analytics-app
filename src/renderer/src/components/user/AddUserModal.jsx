@@ -15,11 +15,15 @@ export default function AddUserModal({ open, onClose, onSave }) {
   const [showPass, setShowPass] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
 
-  // state untuk popup guard
+  // error states
+  const [passwordError, setPasswordError] = useState('')
+  const [confirmError, setConfirmError] = useState('')
+
+  // popup guard
   const [showUnsaved, setShowUnsaved] = useState(false)
   const [showIncomplete, setShowIncomplete] = useState(false)
 
-  // Reset form setiap kali modal utama benar-benar ditutup
+  /* ====================== RESET FORM ====================== */
   useEffect(() => {
     if (!open) {
       setName('')
@@ -31,35 +35,51 @@ export default function AddUserModal({ open, onClose, onSave }) {
       setShowConfirm(false)
       setShowUnsaved(false)
       setShowIncomplete(false)
+      setPasswordError('')
+      setConfirmError('')
     }
   }, [open])
 
-  // form dianggap "dirty" kalau ada field yang tidak kosong
-  const isDirty = useMemo(() => {
-    return name.trim() || email.trim() || password.trim() || confirmPassword.trim() || tag.trim()
-  }, [name, email, password, confirmPassword, tag])
+  /* ====================== VALIDASI ====================== */
 
-  // validasi sederhana
+  // Validasi password minimal 8 karakter
+  useEffect(() => {
+    if (!password.trim()) {
+      setPasswordError('')
+    } else if (password.length < 8) {
+      setPasswordError('Password must contain at least 8 characters')
+    } else {
+      setPasswordError('')
+    }
+  }, [password])
+
+  // Validasi confirm password
+  useEffect(() => {
+    if (!confirmPassword.trim()) {
+      setConfirmError('')
+    } else if (password !== confirmPassword) {
+      setConfirmError("Passwords don't match")
+    } else {
+      setConfirmError('')
+    }
+  }, [confirmPassword, password])
+
   const isValid = useMemo(() => {
-    if (!name.trim() || !email.trim() || !password.trim() || !confirmPassword.trim()) {
-      return false
-    }
-    if (password !== confirmPassword) {
-      return false
-    }
+    if (!name.trim() || !email.trim() || !password.trim() || !confirmPassword.trim()) return false
+    if (password.length < 8) return false
+    if (password !== confirmPassword) return false
     return true
   }, [name, email, password, confirmPassword])
 
-  // dipanggil kalau user klik Cancel atau tombol X di Modal
+  const isDirty = useMemo(() => {
+    return name || email || password || confirmPassword || tag
+  }, [name, email, password, confirmPassword, tag])
+
   const handleRequestClose = () => {
-    if (isDirty) {
-      setShowUnsaved(true)
-    } else {
-      onClose()
-    }
+    if (isDirty) setShowUnsaved(true)
+    else onClose()
   }
 
-  // dipanggil kalau user klik "Add User"
   const handleSave = () => {
     if (!isValid) {
       setShowIncomplete(true)
@@ -71,14 +91,14 @@ export default function AddUserModal({ open, onClose, onSave }) {
 
   return (
     <>
-      {/* ========= MODAL UTAMA: FORM ADD USER ========= */}
+      {/* ========= MODAL ADD USER ========= */}
       <Modal
         open={open}
         title="Add User"
-        // jangan langsung onClose, gunakan guard
         onCancel={handleRequestClose}
         confirmText="Add User"
         onConfirm={handleSave}
+        disableConfirm={!isValid}
       >
         <div className="grid gap-4">
           {/* Name */}
@@ -90,8 +110,8 @@ export default function AddUserModal({ open, onClose, onSave }) {
           <Input
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="Email"
             type="email"
+            placeholder="Email"
           />
 
           {/* Password */}
@@ -111,6 +131,7 @@ export default function AddUserModal({ open, onClose, onSave }) {
               {showPass ? <FaEyeSlash /> : <FaEye />}
             </button>
           </div>
+          {passwordError && <p className="text-xs text-red-400 -mt-1">{passwordError}</p>}
 
           {/* Confirm Password */}
           <FormLabel>Confirm Password *</FormLabel>
@@ -129,6 +150,7 @@ export default function AddUserModal({ open, onClose, onSave }) {
               {showConfirm ? <FaEyeSlash /> : <FaEye />}
             </button>
           </div>
+          {confirmError && <p className="text-xs text-red-400 -mt-1">{confirmError}</p>}
 
           {/* Tag */}
           <FormLabel>Tag</FormLabel>
@@ -145,9 +167,7 @@ export default function AddUserModal({ open, onClose, onSave }) {
           setShowUnsaved(false)
           onClose()
         }}
-        onStay={() => {
-          setShowUnsaved(false)
-        }}
+        onStay={() => setShowUnsaved(false)}
       />
 
       {/* ========= MODAL INCOMPLETE FORM ========= */}
