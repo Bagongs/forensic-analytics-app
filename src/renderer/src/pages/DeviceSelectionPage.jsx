@@ -196,8 +196,16 @@ export default function DeviceSelectionPage() {
     <div className="w-full min-h-full">
       <HeaderBar />
 
-      {/* Frame konten lebar agar muat 5 kartu */}
-      <div className="mx-auto px-8 py-8" style={{ maxWidth: 1680 }}>
+      {/* Frame konten:
+          default (13.3”) max 1680
+          27” QHD (2560×1440) max lebih lebar supaya 5 kartu muat tanpa scroll
+      */}
+      <div
+        className="
+          mx-auto px-8 py-8 max-w-[1680px]
+          [@media(min-width:2560px)_and_(max-height:1500px)]:max-w-[2200px]
+        "
+      >
         {/* TOP BAR */}
         <div className="flex items-center justify-between">
           {/* kiri: back + title besar */}
@@ -221,7 +229,7 @@ export default function DeviceSelectionPage() {
           </div>
 
           {/* kanan: counter + Add Device */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-8">
             <div
               className="select-none"
               style={{ fontFamily: 'Aldrich, sans-serif', fontSize: 28, letterSpacing: '0em' }}
@@ -254,11 +262,19 @@ export default function DeviceSelectionPage() {
             </div>
           ) : (
             <div
-              className="grid gap-x-10 overflow-x-auto overflow-y-hidden py-2"
-              style={{
-                gridAutoFlow: 'column',
-                gridAutoColumns: '369px'
-              }}
+              className="
+                grid py-2
+                gap-x-10 overflow-x-auto overflow-y-hidden
+                grid-flow-col auto-cols-[369px]
+
+                /* 27” QHD: bukan carousel, tapi wrap multi-row dan tanpa scroll X */
+                [@media(min-width:2560px)_and_(max-height:1500px)]:overflow-x-hidden
+                [@media(min-width:2560px)_and_(max-height:1500px)]:gap-x-8
+                [@media(min-width:2560px)_and_(max-height:1500px)]:gap-y-8
+                [@media(min-width:2560px)_and_(max-height:1500px)]:grid-flow-row
+                [@media(min-width:2560px)_and_(max-height:1500px)]:grid-cols-[repeat(auto-fit,369px)]
+                [@media(min-width:2560px)_and_(max-height:1500px)]:justify-between
+              "
             >
               {devices.map((d, i) => (
                 <DeviceCard
