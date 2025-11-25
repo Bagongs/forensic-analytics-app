@@ -147,7 +147,7 @@ export default function DeviceSelectionPage() {
       setAddOpen(false)
     } catch (e) {
       const server = e
-      toast(server?.message || 'Gagal menambahkan device', { icon: '⚠️' })
+      toast('Gagal menambahkan device', { icon: '⚠️' })
     }
   }
 
@@ -274,7 +274,7 @@ export default function DeviceSelectionPage() {
                 [@media(min-width:2560px)_and_(max-height:1500px)]:gap-y-8
                 [@media(min-width:2560px)_and_(max-height:1500px)]:grid-flow-row
                 [@media(min-width:2560px)_and_(max-height:1500px)]:grid-cols-[repeat(auto-fit,369px)]
-                [@media(min-width:2560px)_and_(max-height:1500px)]:justify-between
+                [@media(min-width:2560px)_and_(max-height:1500px)]:justify-center
               "
             >
               {devices.map((d, i) => (
