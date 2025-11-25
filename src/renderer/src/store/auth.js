@@ -30,6 +30,7 @@ export const useAuth = create((set, get) => ({
           fullname: userData.fullname,
           tag: userData.tag,
           role: userData.role,
+          // password hanya di RAM (state), tidak ke storage permanen
           password: userData.password
         },
         isLoaded: true,
@@ -58,6 +59,7 @@ export const useAuth = create((set, get) => ({
   login: async ({ email, password }) => {
     set({ busy: true, error: '' })
     try {
+      // 1) Login dulu → ini akan set token di main process
       const res = await window.api.auth.login({ email, password })
 
       if (!res?.ok) {
@@ -66,9 +68,12 @@ export const useAuth = create((set, get) => ({
         return { ok: false, error: msg }
       }
 
-      const payload = res.data
-      const userData = payload?.data?.user || payload?.user
-      if (!userData) throw new Error('User data missing in response')
+      // 2) Setelah login sukses, ambil profil lengkap dari /auth/me
+      const meRes = await window.api.auth.me()
+      const wrapper = meRes?.data
+      const userData = wrapper?.data || wrapper
+
+      if (!userData) throw new Error('User data missing in /auth/me')
 
       set({
         authed: true,
@@ -77,7 +82,9 @@ export const useAuth = create((set, get) => ({
           email: userData.email,
           fullname: userData.fullname,
           tag: userData.tag,
-          role: userData.role
+          role: userData.role,
+          // password hanya ada di state, tidak disimpan di mana-mana lagi
+          password: userData.password
         },
         isLoaded: true,
         error: ''
