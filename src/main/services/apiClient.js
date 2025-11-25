@@ -208,6 +208,11 @@ api.interceptors.response.use(undefined, async (err) => {
 
   const d = err?.response?.data
   if (d?.message) console.error('[API Error]', d.message)
+
+  if (d && typeof d === 'object' && (d.status === 400 || d.status === 404)) {
+    return Promise.reject(d)
+  }
+
   return Promise.reject(err)
 })
 

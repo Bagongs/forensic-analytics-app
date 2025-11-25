@@ -1,8 +1,9 @@
-/* eslint-disable no-empty */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable no-unused-vars */
 import { useEffect, useMemo, useRef, useState, startTransition } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'react-hot-toast'
+import { handleRedirectContract } from '@renderer/shared/handleRedirectContract'
 
 import HeaderBar from '../components/HeaderBar'
 import ButtonStart from '@renderer/assets/image/button_start.svg'
@@ -53,46 +54,12 @@ function IconFilter(props) {
 function formatDate(iso) {
   if (!iso) return '-'
   const d = new Date(iso)
-
-  // Cek Invalid Date
   if (Number.isNaN(d.getTime())) return '-'
 
   const dd = String(d.getDate()).padStart(2, '0')
   const mm = String(d.getMonth() + 1).padStart(2, '0')
   const yy = d.getFullYear()
   return `${dd}/${mm}/${yy}`
-}
-
-async function prefetchDetailSafe({ method, analytic_id }) {
-  const a = window.api?.analytics
-  if (!a) return
-  try {
-    if (typeof a.fetchByMethod === 'function') {
-      await a.fetchByMethod({ method, analytic_id })
-      return
-    }
-  } catch (e) {
-    console.warn('[prefetchDetailSafe] fetchByMethod failed -> fallback:', e)
-  }
-
-  const m = String(method || '').toLowerCase()
-  try {
-    if (m.includes('contact'))
-      return await (a.getContactCorrelation?.({ analytic_id }) ||
-        a.contactCorrelation?.({ analytic_id }))
-    if (m.includes('hash'))
-      return await (a.getHashfileAnalytics?.({ analytic_id }) || a.hashfile?.({ analytic_id }))
-    if (m.includes('deep'))
-      return await (a.getDeepCommunication?.({ analytic_id }) ||
-        a.deepCommunication?.({ analytic_id }))
-    if (m.includes('social'))
-      return await (a.getSocialMediaCorrelation?.({ analytic_id }) ||
-        a.socialMediaCorrelation?.({ analytic_id }))
-    // APK: biasanya halaman detailnya fetch sendiri
-  } catch (e) {
-    console.warn('[prefetchDetailSafe] direct-fallback error:', e)
-    throw e
-  }
 }
 
 function routeForMethod(method = '') {
@@ -122,19 +89,53 @@ function truncateText(text, max = 16) {
   return text.length > max ? text.substring(0, max) + '...' : text
 }
 
-/* === 400 handler sederhana: hanya redirect halaman === */
-function handleAnalytics400Basic(server, ctx) {
-  if (!server || server.status !== 400) return false
-  const redirectTo = server?.data?.redirect_to || '/analytics/devices'
+/**
+ * Prefetch detail (silent).
+ * Kalau BE bilang harus redirect → handled di goDetail catch.
+ */
+async function prefetchDetailSafe({ method, analytic_id }) {
+  const a = window.api?.analytics
+  if (!a) return
 
-  ctx.nav(redirectTo, {
-    state: {
-      analysisId: ctx.analysisId,
-      method: ctx.method,
-      analysisName: ctx.analysisName
-    }
-  })
-  return true
+  // helper untuk unwrap result ipc
+  const unwrap = (res) => {
+    // ✅ FIX: jangan buang payload error (biar contract redirect kebaca)
+    if (res?.ok === false) throw res.error ?? res
+    return res?.data ?? res
+  }
+
+  // 1) satu pintu
+  if (typeof a.fetchByMethod === 'function') {
+    const r = await a.fetchByMethod({ method, analytic_id })
+    unwrap(r)
+    return
+  }
+
+  // 2) fallback
+  const m = String(method || '').toLowerCase()
+  if (m.includes('contact')) {
+    const r = await (a.getContactCorrelation?.({ analytic_id }) ||
+      a.contactCorrelation?.({ analytic_id }))
+    unwrap(r)
+    return
+  }
+  if (m.includes('hash')) {
+    const r = await (a.getHashfileAnalytics?.({ analytic_id }) || a.hashfile?.({ analytic_id }))
+    unwrap(r)
+    return
+  }
+  if (m.includes('deep')) {
+    const r = await (a.getDeepCommunication?.({ analytic_id }) ||
+      a.deepCommunication?.({ analytic_id }))
+    unwrap(r)
+    return
+  }
+  if (m.includes('social')) {
+    const r = await (a.getSocialMediaCorrelation?.({ analytic_id }) ||
+      a.socialMediaCorrelation?.({ analytic_id }))
+    unwrap(r)
+    return
+  }
 }
 
 /* ===================================================== */
@@ -414,17 +415,18 @@ export default function AnalyticsPage() {
               {/* Scroll body only */}
               <div
                 className="
-                max-h-[550px] 2xl:max-h-[600px]
-                [@media(min-width:2560px)_and_(max-height:1500px)]:max-h-[900px]
-                bg-[#111720] overflow-y-auto divide-y divide-(--border)
-                scrollbar-thin scrollbar-thumb-[#394F6F] scrollbar-track-transparent
-                "
+                  max-h-[550px] 2xl:max-h-[600px]
+                  [@media(min-width:2560px)_and_(max-height:1500px)]:max-h-[900px]
+                  overflow-y-auto divide-y bg-[#111720] divide-(--border)
+                  scrollbar-thin scrollbar-thumb-[#394F6F] scrollbar-track-transparent
+                  "
               >
                 {filteredHistory.length === 0 && (
                   <div className="px-4 py-6 text-sm text-center text-(--dim)">
                     Belum ada history.
                   </div>
                 )}
+
                 {filteredHistory.map((row) => {
                   const notes = row.notes ?? ''
                   const id = row.id ?? row.analytic_id ?? row.analysis_id
@@ -434,27 +436,19 @@ export default function AnalyticsPage() {
 
                   const goDetail = async () => {
                     if (!target || !id) return
-
                     try {
                       await prefetchDetailSafe({ method: methodStr, analytic_id: id })
-                    } catch (e) {
-                      const server = e?.response?.data
-                      const handled = handleAnalytics400Basic(server, {
+                    } catch (server) {
+                      const redirected = handleRedirectContract(server, {
                         nav,
-                        analysisId: id,
-                        method: methodStr,
-                        analysisName: name
+                        toast,
+                        ctx: { analysisId: id, method: methodStr, analysisName: name }
                       })
-                      if (handled) return
-                      console.warn('[goDetail] prefetch error:', server || e)
-                    }
+                      if (redirected) return
 
-                    try {
-                      sessionStorage.setItem(
-                        'analysis.context',
-                        JSON.stringify({ analysisId: id, method: methodStr })
-                      )
-                    } catch {}
+                      toast(server?.message || 'Gagal membuka detail analytics', { icon: '⚠️' })
+                      return
+                    }
 
                     startTransition(() => {
                       nav(target, {
@@ -622,7 +616,7 @@ export default function AnalyticsPage() {
               }
             })
           } catch (e) {
-            console.error('[APK flow] startAnalyzing error:', e?.response?.data || e)
+            console.error('[APK flow] startAnalyzing error:', e)
           }
         }}
       />
@@ -636,11 +630,11 @@ export default function AnalyticsPage() {
             method: String(method || '').trim()
           }
           if (!payload.analytic_name) {
-            console.error('Analytic name is required')
+            toast('Analytic name is required', { icon: '⚠️' })
             return
           }
           if (!isValidMethod(payload.method)) {
-            console.error('Invalid method:', payload.method)
+            toast(`Invalid method: ${payload.method}`, { icon: '⚠️' })
             return
           }
           try {
@@ -659,9 +653,8 @@ export default function AnalyticsPage() {
               }
             })
           } catch (e) {
-            const server = e?.response?.data
-            if (server) console.error('BE 422 detail:', server)
-            console.error('startAnalyzing error:', e)
+            const server = e
+            toast(server?.message || 'Start analyzing gagal', { icon: '⚠️' })
           }
         }}
       />

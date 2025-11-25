@@ -1,7 +1,12 @@
+/* eslint-disable no-empty */
+/* eslint-disable no-unused-vars */
 // src/renderer/src/pages/DeviceSelectionPage.jsx
 
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useMemo, useState, useRef, useEffect, useCallback } from 'react'
+import { toast } from 'react-hot-toast'
+import { handleRedirectContract } from '@renderer/shared/handleRedirectContract'
+
 import HeaderBar from '@renderer/components/HeaderBar'
 import { useAnalytics } from '@renderer/store/analytics'
 import ButtonStart from '@renderer/assets/image/button_start.svg'
@@ -45,32 +50,21 @@ function toDeviceCardModel(d) {
 async function prefetchAfterStart({ method, analytic_id }) {
   try {
     await window.api.analytics.fetchByMethod({ method, analytic_id })
-  } catch (e) {
-    console.warn('[prefetchAfterStart] error:', e?.response?.data || e)
-  }
-}
-
-/* === 400 handler sederhana: hanya redirect halaman === */
-function handleAnalytics400Basic(server, ctx) {
-  if (!server || server.status !== 400) return false
-  const redirectTo = server?.data?.redirect_to || '/analytics/devices'
-
-  ctx.nav(redirectTo, {
-    state: {
-      analysisId: ctx.analysisId,
-      method: ctx.method,
-      analysisName: ctx.analysisName
-    }
-  })
-  return true
+  } catch {}
 }
 
 export default function DeviceSelectionPage() {
   const nav = useNavigate()
   const { state } = useLocation()
 
-  const analysisId = state?.analysisId || null
-  const selectedMethodFromState = state?.method || ''
+  // ===== ambil context dari state dulu, fallback ke sessionStorage
+  let ss = null
+  try {
+    ss = JSON.parse(sessionStorage.getItem('analysis.context') || 'null')
+  } catch {}
+
+  const analysisId = state?.analysisId || ss?.analysisId || null
+  const selectedMethodFromState = state?.method || ss?.method || ''
 
   // (opsional) ambil judul dari store history
   const history = useAnalytics((s) => s.history)
@@ -90,7 +84,6 @@ export default function DeviceSelectionPage() {
 
   // === loading modal (untuk start-extraction)
   const [loadingOpen, setLoadingOpen] = useState(false)
-  const timersRef = useRef([])
   const startingRef = useRef(false)
 
   /* Ambil devices dari BE */
@@ -103,7 +96,6 @@ export default function DeviceSelectionPage() {
       setDevices(mapped)
       setUsedFileIds(mapped.map((d) => d.file_id).filter(Boolean))
     } catch (e) {
-      console.error('[getDevices] error:', e)
       setDevices([])
       setUsedFileIds([])
     }
@@ -111,10 +103,6 @@ export default function DeviceSelectionPage() {
 
   useEffect(() => {
     refreshDevices()
-    return () => {
-      timersRef.current.forEach((t) => clearTimeout(t))
-      timersRef.current = []
-    }
   }, [refreshDevices])
 
   /* Ambil files dari BE, filter berdasar method yang dipilih & exclude usedFileIds */
@@ -125,7 +113,6 @@ export default function DeviceSelectionPage() {
       const res = await window.api.files.getFiles({ search: '', filter: filterVal })
       const rawArr = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : []
 
-      // jaga-jaga: pastikan cocok method di sisi FE bila BE mengembalikan campuran
       const filteredByMethod = rawArr.filter((f) => {
         const m = (f?.method || '').trim()
         return filterVal ? m === filterVal : true
@@ -133,15 +120,13 @@ export default function DeviceSelectionPage() {
 
       const filtered = filteredByMethod.filter((f) => !usedFileIds.includes(filePrimaryId(f)))
       setServerFiles(filtered)
-    } catch (e) {
-      console.error('[getFiles] error:', e)
+    } catch {
       setServerFiles([])
     } finally {
       setFilesLoading(false)
     }
   }, [method, usedFileIds])
 
-  // saat modal dibuka → load files
   useEffect(() => {
     if (addOpen) loadFilesFromServer()
   }, [addOpen, loadFilesFromServer])
@@ -150,7 +135,7 @@ export default function DeviceSelectionPage() {
   const handleAddFromModal = async ({ ownerName, phoneNumber, file }) => {
     try {
       const file_id = filePrimaryId(file)
-      if (!file_id) throw new Error('file_id tidak ditemukan pada file terpilih')
+      if (!file_id) throw new Error('file_id tidak ditemukan')
 
       await window.api.analytics.addDevice({
         file_id,
@@ -160,11 +145,8 @@ export default function DeviceSelectionPage() {
       await refreshDevices()
       setAddOpen(false)
     } catch (e) {
-      console.error('[addDevice] error:', e?.response?.data || e)
-      alert(
-        e?.response?.data?.message ||
-          'Gagal menambahkan device. Pastikan file sesuai metode & belum dipakai.'
-      )
+      const server = e
+      toast(server?.message || 'Gagal menambahkan device', { icon: '⚠️' })
     }
   }
 
@@ -177,38 +159,33 @@ export default function DeviceSelectionPage() {
       startingRef.current = true
       setLoadingOpen(true)
 
-      // 1) Hit kontrak start-extraction (query param)
       const res = await window.api.analytics.startExtraction({ analytic_id: analysisId })
-      const payload = res?.data || res // antisipasi variasi shape
+      const payload = res?.data || res
       const methodFromBE = payload?.method || method
 
-      // 2) (Opsional) Prefetch data awal berdasarkan method dari BE (lebih andal)
       await prefetchAfterStart({ method: methodFromBE, analytic_id: analysisId })
 
-      // 3) Navigate ke halaman detail
       const target = routeForMethod(methodFromBE)
       if (target) {
         nav(target, { state: { analysisId, method: methodFromBE } })
       } else {
-        console.warn('Detail route not implemented for method:', methodFromBE)
+        toast(`Detail route not implemented for method: ${methodFromBE}`, { icon: '⚠️' })
       }
     } catch (e) {
-      const server = e?.response?.data
+      const server = e
 
-      // ✅ jika 400 dari BE → langsung redirect ke devices
-      const handled = handleAnalytics400Basic(server, {
+      const redirected = handleRedirectContract(server, {
         nav,
-        analysisId,
-        method,
-        analysisName: current?.name || state?.analysisName
+        toast,
+        ctx: {
+          analysisId,
+          method,
+          analysisName: current?.name || state?.analysisName
+        }
       })
+      if (redirected) return
 
-      if (!handled) {
-        console.error('[startExtraction] error:', server || e)
-        alert(
-          server?.message || 'Gagal memulai extraction. Cek koneksi dan pastikan minimal 2 device.'
-        )
-      }
+      toast(server?.message || 'Gagal memulai extraction', { icon: '⚠️' })
     } finally {
       setLoadingOpen(false)
       startingRef.current = false
@@ -232,12 +209,12 @@ export default function DeviceSelectionPage() {
               aria-label="Back"
               title="Back"
             >
-              <img src={backIcon} alt="" className="w-12 h-12 opacity-90" />
+              <img src={backIcon} alt="" className="w-[26px] h-[26px] opacity-90" />
             </button>
 
             <h1
-              className="select-none"
-              style={{ fontFamily: 'Aldrich, sans-serif', fontSize: 36, letterSpacing: '0.02em' }}
+              className="select-none tracking-tight"
+              style={{ fontFamily: 'Aldrich, sans-serif', fontSize: 36 }}
             >
               {current?.name || state?.analysisName || 'Choose Device'}
             </h1>
