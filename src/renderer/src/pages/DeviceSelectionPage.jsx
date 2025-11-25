@@ -297,7 +297,7 @@ export default function DeviceSelectionPage() {
 
         {devices.length > 0 && devices.length < MIN_DEVICES && (
           <div className="text-center text-sm" style={{ color: 'var(--dim)' }}>
-            Minimal {MIN_DEVICES} device untuk memulai data extraction.
+            A minimum of {MIN_DEVICES} devices is required to start data extraction.
           </div>
         )}
       </div>

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 // src/renderer/src/components/user/AddUserModal.jsx
 /* eslint-disable react/prop-types */
 import { useEffect, useMemo, useState } from 'react'
@@ -18,6 +19,7 @@ export default function AddUserModal({ open, onClose, onSave }) {
   // error states
   const [passwordError, setPasswordError] = useState('')
   const [confirmError, setConfirmError] = useState('')
+  const [emailError, setEmailError] = useState('')
 
   // popup guard
   const [showUnsaved, setShowUnsaved] = useState(false)
@@ -37,6 +39,7 @@ export default function AddUserModal({ open, onClose, onSave }) {
       setShowIncomplete(false)
       setPasswordError('')
       setConfirmError('')
+      setEmailError('')
     }
   }, [open])
 
@@ -64,8 +67,22 @@ export default function AddUserModal({ open, onClose, onSave }) {
     }
   }, [confirmPassword, password])
 
+  // Validasi email dengan regex (production-friendly)
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[A-Za-z]{2,}$/
+
+  useEffect(() => {
+    if (!email.trim()) {
+      setEmailError('')
+    } else if (!emailRegex.test(email)) {
+      setEmailError('Invalid email format. Example: user@example.com')
+    } else {
+      setEmailError('')
+    }
+  }, [email])
+
   const isValid = useMemo(() => {
     if (!name.trim() || !email.trim() || !password.trim() || !confirmPassword.trim()) return false
+    if (!emailRegex.test(email)) return false
     if (password.length < 8) return false
     if (password !== confirmPassword) return false
     return true
@@ -113,6 +130,7 @@ export default function AddUserModal({ open, onClose, onSave }) {
             type="email"
             placeholder="Email"
           />
+          {emailError && <p className="text-xs text-red-400 -mt-1">{emailError}</p>}
 
           {/* Password */}
           <FormLabel>Password *</FormLabel>

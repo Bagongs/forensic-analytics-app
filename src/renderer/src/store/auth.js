@@ -77,8 +77,7 @@ export const useAuth = create((set, get) => ({
           email: userData.email,
           fullname: userData.fullname,
           tag: userData.tag,
-          role: userData.role,
-          password: userData.password || null
+          role: userData.role
         },
         isLoaded: true,
         error: ''

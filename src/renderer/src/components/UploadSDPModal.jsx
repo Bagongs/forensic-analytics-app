@@ -23,18 +23,19 @@ const TYPE_OPTIONS = [
   { value: 'Laptop', label: 'Laptop' },
   { value: 'DVR', label: 'DVR' }
 ]
+
 const TOOL_OPTIONS = [
   { value: 'Cellebrite', label: 'Cellebrite' },
   { value: 'Oxygen', label: 'Oxygen' },
   { value: 'Magnet Axiom', label: 'Magnet Axiom' },
   { value: 'Encase', label: 'Encase' }
 ]
+
 const METHOD_OPTIONS = [
   { value: 'Deep Communication Analytics', label: 'Deep Communication Analytics' },
   { value: 'Contact Correlation', label: 'Contact Correlation' },
   { value: 'Hashfile Analytics', label: 'Hashfile Analytics' },
   { value: 'Social Media Correlation', label: 'Social Media Correlation' }
-  // APK terpisah (modal UploadAPK)
 ]
 
 function InputField({ label, value, onChange, placeholder = 'Name' }) {
@@ -57,7 +58,7 @@ function InputField({ label, value, onChange, placeholder = 'Name' }) {
 }
 
 export default function UploadSDPModal({ open, onCancel, onNext }) {
-  const [picked, setPicked] = useState(null) // {file_path, file_name, size}
+  const [picked, setPicked] = useState(null)
   const [fileName, setFileName] = useState('')
   const [type, setType] = useState('')
   const [tool, setTool] = useState('')
@@ -65,11 +66,9 @@ export default function UploadSDPModal({ open, onCancel, onNext }) {
   const [notes, setNotes] = useState('')
   const [error, setError] = useState('')
 
-  // guard modals
   const [showUnsaved, setShowUnsaved] = useState(false)
   const [showIncomplete, setShowIncomplete] = useState(false)
 
-  // reset state ketika modal ditutup
   useEffect(() => {
     if (!open) {
       setPicked(null)
@@ -87,7 +86,7 @@ export default function UploadSDPModal({ open, onCancel, onNext }) {
   async function chooseSDP() {
     try {
       const res = await window.api.files.chooseSDP()
-      if (!res) return // user cancel
+      if (!res) return
       setPicked(res)
       setFileName(res.file_name.replace(/\.sdp$/i, ''))
       setError('')
@@ -97,22 +96,17 @@ export default function UploadSDPModal({ open, onCancel, onNext }) {
     }
   }
 
-  // anggap form "dirty" kalau ada isi sedikit pun
   const isDirty = useMemo(() => {
     return picked || fileName.trim() || type || tool || method || notes.trim()
   }, [picked, fileName, type, tool, method, notes])
 
-  // validasi: semua field wajib terisi
   const isValid = useMemo(() => {
     return !!(picked && fileName.trim() && type && tool && method)
   }, [picked, fileName, type, tool, method])
 
   function handleRequestClose() {
-    if (isDirty) {
-      setShowUnsaved(true)
-    } else {
-      onCancel?.()
-    }
+    if (isDirty) setShowUnsaved(true)
+    else onCancel?.()
   }
 
   function handleNext() {
@@ -123,7 +117,7 @@ export default function UploadSDPModal({ open, onCancel, onNext }) {
 
     onNext?.({
       file_path: picked.file_path,
-      file_name: fileName?.trim() ? `${fileName.trim()}.sdp` : picked.file_name,
+      file_name: fileName.trim() ? `${fileName.trim()}.sdp` : picked.file_name,
       type,
       tools: tool,
       method,
@@ -172,6 +166,7 @@ export default function UploadSDPModal({ open, onCancel, onNext }) {
           {/* PICKER */}
           <div>
             <label className="block mb-2">File (.sdp)</label>
+
             {!picked ? (
               <div
                 className="w-full h-36 flex items-center justify-center"
@@ -191,14 +186,17 @@ export default function UploadSDPModal({ open, onCancel, onNext }) {
               </div>
             ) : (
               <div
-                className="w-full p-4 flex items-center justify-between"
+                className="w-full p-4 flex items-center justify-between gap-3"
                 style={{ background: COLORS.inputBg, border: `1px solid ${COLORS.inputBorder}` }}
               >
-                <div className="min-w-0">
+                {/* LEFT: file name + path (truncate, max width constraint) */}
+                <div className="min-w-0" style={{ maxWidth: 'calc(100% - 240px)' }}>
                   <div className="truncate">{picked.file_name}</div>
-                  <div className="text-xs opacity-70">{picked.file_path}</div>
+                  <div className="text-xs opacity-70 truncate">{picked.file_path}</div>
                 </div>
-                <div className="flex items-center gap-3">
+
+                {/* RIGHT: buttons */}
+                <div className="flex items-center gap-3 shrink-0">
                   <button
                     onClick={chooseSDP}
                     className="h-10 px-5 rounded app-title text-[15px]"
@@ -210,6 +208,7 @@ export default function UploadSDPModal({ open, onCancel, onNext }) {
                   >
                     REPLACE
                   </button>
+
                   <button
                     onClick={() => setPicked(null)}
                     className="h-10 px-5 rounded app-title text-[15px]"
@@ -220,11 +219,13 @@ export default function UploadSDPModal({ open, onCancel, onNext }) {
                 </div>
               </div>
             )}
+
             {error && (
               <div className="mt-2 text-sm" style={{ color: '#FCA5A5' }}>
                 {error}
               </div>
             )}
+
             <div className="mt-4 h-px w-full" style={{ background: 'rgba(255,255,255,0.25)' }} />
           </div>
 
@@ -233,8 +234,9 @@ export default function UploadSDPModal({ open, onCancel, onNext }) {
             label="File Name"
             value={fileName}
             onChange={setFileName}
-            placeholder="Name (tanpa .sdp)"
+            placeholder="Name (excluding .sdp)"
           />
+
           <SelectField
             label="Type"
             value={type}
@@ -242,6 +244,7 @@ export default function UploadSDPModal({ open, onCancel, onNext }) {
             options={TYPE_OPTIONS}
             placeholder="Select type"
           />
+
           <SelectField
             label="Tools"
             value={tool}
@@ -249,6 +252,7 @@ export default function UploadSDPModal({ open, onCancel, onNext }) {
             options={TOOL_OPTIONS}
             placeholder="Select tools"
           />
+
           <SelectField
             label="Methods"
             value={method}
@@ -256,6 +260,7 @@ export default function UploadSDPModal({ open, onCancel, onNext }) {
             options={METHOD_OPTIONS}
             placeholder="Select method"
           />
+
           <div>
             <label className="block mb-2">Notes</label>
             <textarea
@@ -281,9 +286,7 @@ export default function UploadSDPModal({ open, onCancel, onNext }) {
           setShowUnsaved(false)
           onCancel?.()
         }}
-        onStay={() => {
-          setShowUnsaved(false)
-        }}
+        onStay={() => setShowUnsaved(false)}
       />
 
       {/* INCOMPLETE FORM */}

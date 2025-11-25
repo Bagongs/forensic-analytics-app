@@ -135,19 +135,19 @@ export default function HeaderBar() {
             {isAdmin && (
               <button
                 type="button"
-                onClick={() => hasPassword && setShowPassword((v) => !v)}
-                className="mt-3 flex items-center gap-2 text-xs opacity-80 hover:opacity-100"
+                onClick={() => setShowPassword((v) => !v)}
+                disabled={!hasPassword}
+                className="mt-3 flex items-center gap-2 text-xs opacity-80 hover:opacity-100 disabled:cursor-not-allowed"
               >
                 {showPassword && hasPassword ? (
                   <LuEye className="w-4 h-4" />
                 ) : (
                   <LuEyeOff className="w-4 h-4" />
                 )}
-                <span className="tracking-[0.25em]">{displayPassword}</span>
+                <span className="tracking-[0.25em] select-none">{displayPassword}</span>
               </button>
             )}
           </div>
-
           <div className="h-px" style={{ background: '#C3CFE0' }} />
 
           {/* ===== MENU: admin only ===== */}

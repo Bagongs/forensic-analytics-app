@@ -63,8 +63,11 @@ export default function LoginPage() {
         {/* FORM PANEL */}
         <div className="h-full flex flex-col items-center justify-center">
           <div className="w-[420px]">
-            <h2 className="text-center text-xl font-semibold mb-8" style={{ color: 'var(--text)' }}>
-              STAFF LOG IN
+            <h2
+              className="text-center text-3xl font-semibold mb-8"
+              style={{ color: 'var(--text)' }}
+            >
+              SIGN IN
             </h2>
 
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -119,7 +122,7 @@ export default function LoginPage() {
                   }}
                 >
                   <span className="tracking-wide" style={{ color: 'var(--gold)' }}>
-                    {busy ? 'SIGNING IN…' : 'LOGIN'}
+                    {busy ? 'SIGNING IN…' : 'SIGN IN'}
                   </span>
                 </button>
               </div>

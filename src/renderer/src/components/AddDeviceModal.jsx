@@ -46,9 +46,10 @@ function InputField({ label, value, onChange, placeholder }) {
   )
 }
 
-/* === PHONE NUMBER (digits only) === */
+/* === PHONE NUMBER (digits only, max 15) === */
 function PhoneNumberField({ label, value, onChange, placeholder }) {
-  const sanitize = (v) => v.replace(/\D+/g, '') // keep digits only
+  const MAX_LEN = 15
+  const sanitize = (v) => v.replace(/\D+/g, '').slice(0, MAX_LEN) // keep digits only + limit 15
 
   return (
     <div>
@@ -73,8 +74,18 @@ function PhoneNumberField({ label, value, onChange, placeholder }) {
             'Enter'
           ]
           if (allowed.includes(e.key)) return
-          if (e.ctrlKey || e.metaKey) return // allow Cmd/Ctrl + A/C/V/X
-          if (!/^[0-9]$/.test(e.key)) e.preventDefault() // block non-digit
+          if (e.ctrlKey || e.metaKey) return
+
+          // block non-digit
+          if (!/^[0-9]$/.test(e.key)) {
+            e.preventDefault()
+            return
+          }
+
+          // hard limit 15 digits saat mengetik
+          if ((value || '').length >= MAX_LEN) {
+            e.preventDefault()
+          }
         }}
         style={{
           background: COLORS.inputBg,
@@ -114,10 +125,6 @@ export default function AddDeviceModal({
   const [submitting, setSubmitting] = useState(false)
 
   // Filter client-side:
-  // - wajib punya id primer
-  // - method harus PERSIS sama (server kadang kirim campur)
-  // - exclude usedFileIds
-  // - apply search query
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     return (files || [])
@@ -294,7 +301,7 @@ export default function AddDeviceModal({
           ))}
         </div>
 
-        {/* BODY — dibuat lebih renggang */}
+        {/* BODY */}
         <div className="max-h-[380px] overflow-y-auto pr-1.5 space-y-2">
           {filtered.map((f) => {
             const fid = f.__fid ?? f.id
@@ -307,10 +314,10 @@ export default function AddDeviceModal({
                 className="grid items-center px-4 py-2 rounded-[10px] transition-colors"
                 style={{
                   gridTemplateColumns: GRID_TEMPLATE,
-                  minHeight: 64, // lebih tinggi dari 52
+                  minHeight: 64,
                   background: 'transparent',
                   opacity: disabled ? 0.5 : 1,
-                  border: `1px solid ${COLORS.rowBottomBorder}33` // garis pemisah halus
+                  border: `1px solid ${COLORS.rowBottomBorder}33`
                 }}
                 onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
                 onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
