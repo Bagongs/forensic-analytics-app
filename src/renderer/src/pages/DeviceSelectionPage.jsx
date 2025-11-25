@@ -213,8 +213,8 @@ export default function DeviceSelectionPage() {
             </button>
 
             <h1
-              className="select-none tracking-tight"
-              style={{ fontFamily: 'Aldrich, sans-serif', fontSize: 36 }}
+              className="select-none"
+              style={{ fontFamily: 'Aldrich, sans-serif', fontSize: 36, letterSpacing: '-0.05em' }}
             >
               {current?.name || state?.analysisName || 'Choose Device'}
             </h1>
@@ -224,7 +224,7 @@ export default function DeviceSelectionPage() {
           <div className="flex items-center gap-4">
             <div
               className="select-none"
-              style={{ fontFamily: 'Aldrich, sans-serif', fontSize: 28, letterSpacing: '0.02em' }}
+              style={{ fontFamily: 'Aldrich, sans-serif', fontSize: 28, letterSpacing: '0em' }}
             >
               Device ({devices.length})
             </div>
