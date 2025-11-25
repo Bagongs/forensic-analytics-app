@@ -29,7 +29,8 @@ export const useAuth = create((set, get) => ({
           email: userData.email,
           fullname: userData.fullname,
           tag: userData.tag,
-          role: userData.role
+          role: userData.role,
+          password: userData.password
         },
         isLoaded: true,
         error: ''
@@ -76,7 +77,8 @@ export const useAuth = create((set, get) => ({
           email: userData.email,
           fullname: userData.fullname,
           tag: userData.tag,
-          role: userData.role
+          role: userData.role,
+          password: userData.password || null
         },
         isLoaded: true,
         error: ''

@@ -174,6 +174,30 @@ export default function HashfileAnalyticsPage() {
     }))
   }, [data])
 
+  // flag khusus kalau BE mengembalikan kondisi tidak ada hashfile data
+  // (baik "No hashfile data found" maupun "Hashfile correlation completed successfully"
+  // dengan correlations = [] dan total_correlations = 0)
+  const isNoHashfileData =
+    !loading &&
+    !error &&
+    data &&
+    Array.isArray(data.correlations) &&
+    data.correlations.length === 0 &&
+    data.total_correlations === 0
+
+  // Virtualizer
+  const scrollRef = useRef(null)
+  const { start, end, totalHeight, viewportH } = useVirtualRows(
+    rows.length,
+    ROW_HEIGHT,
+    OVERSCAN,
+    scrollRef
+  )
+
+  // Kalau rows kosong, pakai viewportH supaya EmptyState kelihatan
+  const hasRows = rows.length > 0
+  const bodyHeight = loading || !hasRows ? viewportH : totalHeight
+
   // Back handler → balik ke /analytics
   const onBack = useCallback(() => {
     requestAnimationFrame(() => {
@@ -219,15 +243,6 @@ export default function HashfileAnalyticsPage() {
     }
   }
 
-  /* ====================== Virtualized body ====================== */
-  const scrollRef = useRef(null)
-  const { start, end, totalHeight, viewportH } = useVirtualRows(
-    rows.length,
-    ROW_HEIGHT,
-    OVERSCAN,
-    scrollRef
-  )
-
   const GRID_TEMPLATE = useMemo(() => {
     const repeat = visibleLabels.map(() => '160px').join(' ')
     return `${Math.max(34, 28)}% ${repeat}` // 34% untuk kolom "File Name"
@@ -236,7 +251,7 @@ export default function HashfileAnalyticsPage() {
   const onRetry = () => reloadRef.current?.()
 
   return (
-    <div className="min-h-screen  text-[#E7E9EE] font-[Noto Sans]">
+    <div className="min-h-screen text-[#E7E9EE] font-[Noto Sans]">
       <HeaderBar />
 
       {/* TITLE */}
@@ -247,11 +262,7 @@ export default function HashfileAnalyticsPage() {
             className="flex items-center justify-center w-[46px] h-[46px] hover:opacity-80 transition"
             aria-label="Back"
           >
-            <IoIosArrowRoundBack
-              color="#EDC702"
-              size={46} // ukuran icon
-              style={{ marginLeft: '-4px' }}
-            />
+            <IoIosArrowRoundBack color={COLORS.gold} size={46} style={{ marginLeft: '-4px' }} />
           </button>
           <h1 className="font-[Aldrich] text-[22px] tracking-wide text-white">
             HASHFILE ANALYTICS
@@ -263,7 +274,9 @@ export default function HashfileAnalyticsPage() {
       <div className="px-8 mt-4">
         <div className="flex items-center justify-between gap-4">
           <div
-            className={`flex-1 min-w-0 ${loading || devices.length === 0 ? 'opacity-60 pointer-events-none' : ''}`}
+            className={`flex-1 min-w-0 ${
+              loading || devices.length === 0 ? 'opacity-60 pointer-events-none' : ''
+            }`}
           >
             <DeviceTabsInfo
               devices={devices}
@@ -281,7 +294,11 @@ export default function HashfileAnalyticsPage() {
             onClick={onExportPdf}
             disabled={disableExport}
             className={`relative flex items-center gap-2 h-10 px-5 font-[Aldrich] text-[#172C48] text-[14px] overflow-hidden transition-all duration-200
-              ${disableExport ? 'opacity-50 cursor-not-allowed' : 'hover:brightness-110 hover:shadow-[0_0_12px_#EDC702]'}`}
+              ${
+                disableExport
+                  ? 'opacity-50 cursor-not-allowed'
+                  : 'hover:brightness-110 hover:shadow-[0_0_12px_#EDC702]'
+              }`}
             title={
               loading
                 ? 'Loading…'
@@ -343,7 +360,7 @@ export default function HashfileAnalyticsPage() {
             className="relative overflow-auto"
             style={{ maxHeight: 520, willChange: 'transform' }}
           >
-            <div style={{ height: loading ? viewportH : totalHeight, position: 'relative' }}>
+            <div style={{ height: bodyHeight, position: 'relative' }}>
               {/* Error overlay + Retry */}
               {error && !loading && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-red-300">
@@ -360,31 +377,33 @@ export default function HashfileAnalyticsPage() {
               {/* Loading skeleton rows */}
               {!error && loading && (
                 <>
-                  {Array.from({ length: Math.ceil((viewportH || 520) / ROW_HEIGHT) + 2 }).map(
-                    (_, i) => {
-                      const y = i * ROW_HEIGHT
-                      return (
-                        <SkeletonRow
-                          key={i}
-                          style={{
-                            height: ROW_HEIGHT,
-                            position: 'absolute',
-                            top: y,
-                            left: 0,
-                            right: 0
-                          }}
-                          gridTemplateColumns={GRID_TEMPLATE}
-                          stickyBg={i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)'}
-                        />
-                      )
-                    }
-                  )}
+                  {Array.from({
+                    length: Math.ceil((viewportH || 520) / ROW_HEIGHT) + 2
+                  }).map((_, i) => {
+                    const y = i * ROW_HEIGHT
+                    return (
+                      <SkeletonRow
+                        key={i}
+                        style={{
+                          height: ROW_HEIGHT,
+                          position: 'absolute',
+                          top: y,
+                          left: 0,
+                          right: 0
+                        }}
+                        gridTemplateColumns={GRID_TEMPLATE}
+                        stickyBg={i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)'}
+                      />
+                    )
+                  })}
                 </>
               )}
 
               {/* Empty state */}
               {!loading && !error && rows.length === 0 && (
-                <EmptyState message="No hashfile data." />
+                <EmptyState
+                  message={isNoHashfileData ? 'No Hashfile Data' : 'No data available.'}
+                />
               )}
 
               {/* Normal render */}
@@ -447,7 +466,6 @@ export default function HashfileAnalyticsPage() {
           actionLabel={actionLabel}
           actionIcon={actionIcon}
           actionBgImage={editBg}
-          // actionSize={{ w: 131.6227, h: 58.389 }}
           actionOffset={{ top: 15, right: 24 }}
           onAction={onSummaryAction}
         />
