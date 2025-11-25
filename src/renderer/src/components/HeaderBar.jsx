@@ -43,7 +43,8 @@ export default function HeaderBar() {
 
   // Password display
   const masked = '••••••••••••••••'
-  const displayPassword = showPassword ? safeUser.password || masked : masked
+  const hasPassword = !!safeUser.password
+  const displayPassword = hasPassword ? (showPassword ? safeUser.password : masked) : masked
 
   return (
     <>
@@ -75,7 +76,6 @@ export default function HeaderBar() {
             onClick={() => setOpen((v) => !v)}
             className="flex self-end justify-end items-center md:mt-6 mt-5 gap-2 text-white hover:opacity-90 select-none"
           >
-            {/* icon size default = 13.3”, 27” lebih besar */}
             <img
               src={userIcon}
               alt="User"
@@ -123,7 +123,6 @@ export default function HeaderBar() {
             <div
               className="
                 font-semibold text-sm
-                /* default 13.3”: normal font */
                 /* 27”: pakai Aldrich */
                 [@media(min-width:2560px)_and_(max-height:1500px)]:font-[Aldrich]
               "
@@ -136,10 +135,14 @@ export default function HeaderBar() {
             {isAdmin && (
               <button
                 type="button"
-                onClick={() => setShowPassword((v) => !v)}
+                onClick={() => hasPassword && setShowPassword((v) => !v)}
                 className="mt-3 flex items-center gap-2 text-xs opacity-80 hover:opacity-100"
               >
-                {showPassword ? <LuEye className="w-4 h-4" /> : <LuEyeOff className="w-4 h-4" />}
+                {showPassword && hasPassword ? (
+                  <LuEye className="w-4 h-4" />
+                ) : (
+                  <LuEyeOff className="w-4 h-4" />
+                )}
                 <span className="tracking-[0.25em]">{displayPassword}</span>
               </button>
             )}
