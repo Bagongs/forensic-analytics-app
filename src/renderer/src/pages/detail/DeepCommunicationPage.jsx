@@ -516,7 +516,7 @@ export default function DeepCommunicationPage() {
                     setMessages([])
                     setQuery('')
                   }}
-                  className="text-xs opacity-80 hover:opacity-100"
+                  className="text-sm p-0.5 btn-upload text-[#0B0F17] hover:bg-[#EDC702] transition"
                 >
                   Change
                 </button>
