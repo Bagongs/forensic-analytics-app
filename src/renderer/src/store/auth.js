@@ -7,19 +7,18 @@ export const useAuth = create((set, get) => ({
   user: null,
   busy: false,
   error: '',
-  isLoaded: false, // <<< penting untuk tahu "sudah cek session atau belum"
+  isLoaded: false,
 
   // ========================================
-  // INIT / CHECK SESSION (dipanggil saat app start)
+  // INIT / CHECK SESSION
   // ========================================
   init: async () => {
-    // Jangan spam kalau sudah pernah dipanggil
     if (get().isLoaded) return
 
     try {
       const res = await window.api.auth.me()
-      const wrapper = res?.data // sesuai API contract: { status, message, data: {...user} }
-      const userData = wrapper?.data || wrapper // jaga-jaga kalau langsung user
+      const wrapper = res?.data
+      const userData = wrapper?.data || wrapper
 
       if (!userData) throw new Error('No user data')
 
@@ -31,7 +30,6 @@ export const useAuth = create((set, get) => ({
           fullname: userData.fullname,
           tag: userData.tag,
           role: userData.role
-          // ⚠️ JANGAN simpan password, walaupun backend ngasih
         },
         isLoaded: true,
         error: ''
@@ -39,7 +37,6 @@ export const useAuth = create((set, get) => ({
 
       return true
     } catch (err) {
-      // kalau token invalid / expired, anggap belum login
       set({
         authed: false,
         user: null,
@@ -49,7 +46,6 @@ export const useAuth = create((set, get) => ({
     }
   },
 
-  // Kalau kamu masih mau pakai manual check di beberapa tempat
   check: async () => {
     const ok = await get().init()
     return ok
@@ -63,9 +59,13 @@ export const useAuth = create((set, get) => ({
     try {
       const res = await window.api.auth.login({ email, password })
 
-      // API Contract:
-      // res.data = { status, message, data: { user, access_token, refresh_token } }
-      const payload = res?.data
+      if (!res?.ok) {
+        const msg = res?.message || 'Login gagal'
+        set({ error: msg, authed: false, user: null })
+        return { ok: false, error: msg }
+      }
+
+      const payload = res.data
       const userData = payload?.data?.user || payload?.user
       if (!userData) throw new Error('User data missing in response')
 
@@ -77,7 +77,6 @@ export const useAuth = create((set, get) => ({
           fullname: userData.fullname,
           tag: userData.tag,
           role: userData.role
-          // ⚠️ jangan simpan password di sini
         },
         isLoaded: true,
         error: ''
@@ -85,13 +84,8 @@ export const useAuth = create((set, get) => ({
 
       return { ok: true }
     } catch (e) {
-      const msg = e?.response?.data?.message || e?.message || 'Login gagal'
-
-      set({
-        error: msg,
-        authed: false,
-        user: null
-      })
+      const msg = e?.message || 'Login gagal'
+      set({ error: msg, authed: false, user: null })
       return { ok: false, error: msg }
     } finally {
       set({ busy: false })

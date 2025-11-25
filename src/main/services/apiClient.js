@@ -44,7 +44,7 @@ export function schedulePreemptiveRefresh(access) {
   const delayMs = Math.max((exp - nowSec - AHEAD) * 1000, 5_000)
   refreshTimer = setTimeout(() => {
     refreshAccessTokenOnce().catch(() => {
-      // biarkan mekanisme 401→refresh jadi fallback; jangan logout otomatis di sini
+      // fallback ke mekanisme 401→refresh
     })
   }, delayMs)
 }
@@ -173,7 +173,7 @@ export async function refreshAccessTokenOnce() {
   }
 }
 
-// ===== Response error: auto-refresh + retry
+// ===== Response error: auto-refresh + retry + CLEAN ERROR MESSAGE
 api.interceptors.response.use(undefined, async (err) => {
   const status = err?.response?.status
   const original = err?.config || {}
@@ -209,8 +209,18 @@ api.interceptors.response.use(undefined, async (err) => {
   const d = err?.response?.data
   if (d?.message) console.error('[API Error]', d.message)
 
+  // ⛔ tetap raw untuk 400/404 (buat guard/redirect logic kamu)
   if (d && typeof d === 'object' && (d.status === 400 || d.status === 404)) {
     return Promise.reject(d)
+  }
+
+  // ✅ semua selain 400/404 (termasuk 401 login) jadi Error bersih
+  if (d && typeof d === 'object' && d.message) {
+    const cleanErr = new Error(d.message)
+    cleanErr.status = d.status ?? status
+    cleanErr.data = d.data
+    cleanErr.isApiError = true
+    return Promise.reject(cleanErr)
   }
 
   return Promise.reject(err)
