@@ -140,7 +140,8 @@ export default function DeviceSelectionPage() {
       await window.api.analytics.addDevice({
         file_id,
         name: ownerName,
-        phone_number: phoneNumber
+        phone_number: phoneNumber,
+        analytic_id: analysisId
       })
       await refreshDevices()
       setAddOpen(false)

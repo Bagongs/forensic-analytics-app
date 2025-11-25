@@ -4,7 +4,7 @@
    API CLIENT — Forensic Analytics (Electron-Vite / React JS)
    ============================================================ */
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://172.15.2.105:8000'
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 /* ---------- Token helpers ---------- */
 export const getToken = () => localStorage.getItem('access_token') || ''

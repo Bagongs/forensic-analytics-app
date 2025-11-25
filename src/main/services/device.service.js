@@ -1,7 +1,7 @@
 import api from './apiClient'
 
-export async function addDevice({ file_id, name, phone_number }) {
-  const { data } = await api.post('/api/v1/analytics/add-device', { file_id, name, phone_number })
+export async function addDevice({ file_id, name, phone_number, analytic_id}) {
+  const { data } = await api.post('/api/v1/analytics/add-device', { file_id, name, phone_number, analytic_id })
   return data
 }
 

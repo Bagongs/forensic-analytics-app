@@ -151,7 +151,7 @@ export default function UploadProgress({
               />
               {isError && (
                 <span className="text-[16px] font-semibold" style={{ color: '#F87171' }}>
-                  Upload Failed! Please try again
+                  {text || 'Upload Failed! Please try again'}
                 </span>
               )}
               {isSuccess && (

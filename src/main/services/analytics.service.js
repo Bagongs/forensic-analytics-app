@@ -160,12 +160,13 @@ export async function getChatDetail({ analytic_id, person_name, platform, device
 
 /* ======================= DEVICE MANAGEMENT ======================= */
 
-export async function addDevice({ file_id, name, phone_number }) {
+export async function addDevice({ file_id, name, phone_number, analytic_id }) {
   try {
     const form = new FormData()
     form.append('file_id', file_id)
     form.append('name', name)
     form.append('phone_number', phone_number)
+    form.append('analytic_id', analytic_id)
 
     const { data } = await api.post('/api/v1/analytics/add-device', form, {
       headers: { 'Content-Type': 'multipart/form-data' }

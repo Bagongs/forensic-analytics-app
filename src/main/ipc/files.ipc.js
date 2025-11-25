@@ -30,7 +30,24 @@ function clamp(n, min, max) {
 
 export default function registerFilesIpc() {
   // === Upload SDP ===
-  ipcMain.handle('files:uploadData', (_e, p) => uploadData(p))
+  ipcMain.handle('files:uploadData', async (event, payload) => {
+    try {
+      const result = await uploadData(payload)
+      return result
+    } catch (err) {
+      console.error('[MAIN uploadData ERROR]', err?.message)
+
+      // Convert backend error to JSON-safe object
+      const safe = {
+        __error: true,
+        message:
+          err?.readableMessage || err?.response?.data?.message || err?.message || 'Upload failed',
+        status: err?.response?.status
+      }
+
+      return safe // 👉 return simple object (Electron can clone this)
+    }
+  })
 
   // === Poll progress ===
   ipcMain.handle('files:uploadProgress', async (e, p) => {

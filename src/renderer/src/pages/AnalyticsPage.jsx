@@ -566,6 +566,12 @@ export default function AnalyticsPage() {
               tools,
               method
             })
+            if (res?.__error) {
+              setProgLabel(res.message)
+              setProgStatus('error')
+              return
+            }
+
             const uploadId = res?.data?.upload_id || res?.upload_id
             if (!uploadId) throw new Error('Upload ID tidak ditemukan')
             let done = false
@@ -585,8 +591,27 @@ export default function AnalyticsPage() {
             setTimeout(() => setProgOpen(false), 600)
             fetchUploaded({})
           } catch (e) {
-            console.error(e)
+            console.error('UPLOAD ERROR RAW:', {
+              message: e?.message,
+              cause: e?.cause?.message,
+              name: e?.name
+            })
+
+            // Extract axios error from Electron RPC wrapper
+            const ax =
+              e?.args?.[0] || // ←🔥 REAL AXIOS ERROR (Electron IPC)
+              e?.cause || // fallback
+              e
+
+            // Extract backend message
+            const backendMessage =
+              ax?.readableMessage || ax?.response?.data?.message || ax?.message || 'Upload failed'
+
+            // Apply to UI
+            setProgLabel(backendMessage)
             setProgStatus('error')
+
+            pollingAbortRef.current = true
           }
         }}
       />
