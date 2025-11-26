@@ -234,7 +234,7 @@ export default function HashfileAnalyticsPage() {
     if (savingRef.current) return
     savingRef.current = true
     try {
-      await window.api.report.saveSummary({ analytic_id: analysisId, summary })
+      await window.api.report.saveSummary({ analytic_id: analysisId, summary: summary })
       setIsEditing(false)
     } catch (e) {
       alert(extractHttpMessage(e, 'Gagal menyimpan ringkasan'))

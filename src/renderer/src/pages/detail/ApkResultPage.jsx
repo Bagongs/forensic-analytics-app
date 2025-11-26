@@ -103,7 +103,7 @@ export default function ApkResultPage() {
 
   const handleSummaryAction = () => {
     if (!isEditing) return setIsEditing(true)
-    window.api.report.saveSummary({ analytic_id: analyticId, summary })
+    window.api.report.saveSummary({ analytic_id: analyticId, summary: summary })
     setIsEditing(false)
   }
 

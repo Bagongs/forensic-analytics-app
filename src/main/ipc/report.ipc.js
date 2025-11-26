@@ -12,7 +12,7 @@ function assertHas(obj, keys = []) {
 export default function registerReportIpc() {
   ipcMain.handle('report:saveSummary', async (_e, p) => {
     try {
-      assertHas(p, ['analytic_id', 'summary'])
+      // assertHas(p, ['analytic_id', 'summary'])
       return await saveSummary(p)
     } catch (err) {
       throw new Error(`saveSummary failed: ${err.message || err}`)

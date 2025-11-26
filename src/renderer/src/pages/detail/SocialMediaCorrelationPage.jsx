@@ -326,7 +326,7 @@ export default function SocialMediaCorrelationPage() {
     try {
       await window.api.report.saveSummary({
         analytic_id: analyticId,
-        summary
+        summary: summary
       })
       setEditing(false)
     } catch (e) {

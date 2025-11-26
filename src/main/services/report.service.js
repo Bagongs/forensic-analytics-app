@@ -25,7 +25,7 @@ function compactParams(obj) {
 export async function saveSummary({ analytic_id, summary }) {
   const { data } = await api.post(
     '/api/v1/analytic/save-summary',
-    { summary },
+    { summary: summary },
     { params: compactParams({ analytic_id }) }
   )
   return data
