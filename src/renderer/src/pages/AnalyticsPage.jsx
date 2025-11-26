@@ -557,6 +557,7 @@ export default function AnalyticsPage() {
           setProgStatus('uploading')
           setProgOpen(true)
           pollingAbortRef.current = false
+
           try {
             const res = await window.api.files.uploadData({
               filePath: file_path,
@@ -566,30 +567,87 @@ export default function AnalyticsPage() {
               tools,
               method
             })
+
             if (res?.__error) {
-              setProgLabel(res.message)
+              setProgLabel(res.message || 'Upload failed')
               setProgStatus('error')
               return
             }
 
             const uploadId = res?.data?.upload_id || res?.upload_id
             if (!uploadId) throw new Error('Upload ID tidak ditemukan')
+
             let done = false
+            let lastStatus = ''
+            let lastMessage = ''
+            let lastPct = 0
+
             while (!done && !pollingAbortRef.current) {
               const raw = await window.api.files.uploadProgress({
                 upload_id: uploadId,
                 type: 'data'
               })
+
               const { pct, status, message } = normalizeUploadProgress(raw)
-              if (pct) setProgPct(pct)
-              setProgLabel(message || status)
-              if (status?.includes('finish') || status === 'success') done = true
+              const s = (status || '').toString().toLowerCase()
+              const msg = message || ''
+
+              if (Number.isFinite(pct)) {
+                setProgPct(pct)
+                lastPct = pct
+              }
+
+              setProgLabel(msg || s || 'Uploading…')
+              lastStatus = s
+              lastMessage = msg
+
+              // === DETEKSI FAILED DARI CONTRACT ===
+              // status: "Failed" / upload_status: "Failed"
+              // message: "File upload failed. Please upload this file using Tools {detected_tool}"
+              const isFailedStatus = s === 'failed'
+              const isFailedMessage =
+                msg.toLowerCase().includes('upload failed') ||
+                msg.toLowerCase().includes('unknown upload status') ||
+                msg.toLowerCase().includes('internal server error')
+
+              if (isFailedStatus || isFailedMessage) {
+                setProgStatus('error')
+                setProgLabel(
+                  msg ||
+                    'Upload Failed! Please upload this file using tools yang sesuai, lalu coba lagi.'
+                )
+                pollingAbortRef.current = true
+                done = true
+                break
+              }
+
+              // === DETEKSI SUCCESS ===
+              const isSuccessStatus = s === 'success' || s.includes('success')
+              if (isSuccessStatus || (Number.isFinite(pct) && pct >= 100)) {
+                done = true
+                lastStatus = 'success'
+              }
+
               await new Promise((r) => setTimeout(r, 800))
             }
+
+            // kalau user cancel di tengah, jangan lanjut update
             if (pollingAbortRef.current) return
-            setProgStatus('success')
-            setTimeout(() => setProgOpen(false), 600)
-            fetchUploaded({})
+
+            if (lastStatus === 'success') {
+              setProgStatus('success')
+              setProgLabel(lastMessage || 'Upload successful')
+              // optionally force 100%
+              if (lastPct < 100) setProgPct(100)
+              setTimeout(() => setProgOpen(false), 600)
+              fetchUploaded({})
+            } else if (lastStatus === 'failed') {
+              setProgStatus('error')
+              setProgLabel(
+                lastMessage ||
+                  'Upload Failed! Please upload this file menggunakan tools yang sesuai kemudian coba lagi.'
+              )
+            }
           } catch (e) {
             console.error('UPLOAD ERROR RAW:', {
               message: e?.message,
@@ -597,20 +655,16 @@ export default function AnalyticsPage() {
               name: e?.name
             })
 
-            // Extract axios error from Electron RPC wrapper
             const ax =
-              e?.args?.[0] || // ←🔥 REAL AXIOS ERROR (Electron IPC)
-              e?.cause || // fallback
+              e?.args?.[0] || // axios error dari IPC
+              e?.cause ||
               e
 
-            // Extract backend message
             const backendMessage =
               ax?.readableMessage || ax?.response?.data?.message || ax?.message || 'Upload failed'
 
-            // Apply to UI
             setProgLabel(backendMessage)
             setProgStatus('error')
-
             pollingAbortRef.current = true
           }
         }}
