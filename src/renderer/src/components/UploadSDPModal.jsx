@@ -57,6 +57,11 @@ function InputField({ label, value, onChange, placeholder = 'Name' }) {
   )
 }
 
+// helper untuk cek apakah file berakhiran .txt.sdp
+function isTxtSdpFile(name = '') {
+  return /\.txt\.sdp$/i.test(name)
+}
+
 export default function UploadSDPModal({ open, onCancel, onNext }) {
   const [picked, setPicked] = useState(null)
   const [fileName, setFileName] = useState('')
@@ -65,6 +70,9 @@ export default function UploadSDPModal({ open, onCancel, onNext }) {
   const [method, setMethod] = useState('')
   const [notes, setNotes] = useState('')
   const [error, setError] = useState('')
+
+  // flag: kalau true maka Tools & Methods dikunci (auto Encase + Hashfile Analytics)
+  const [lockToolMethod, setLockToolMethod] = useState(false)
 
   const [showUnsaved, setShowUnsaved] = useState(false)
   const [showIncomplete, setShowIncomplete] = useState(false)
@@ -80,6 +88,7 @@ export default function UploadSDPModal({ open, onCancel, onNext }) {
       setError('')
       setShowUnsaved(false)
       setShowIncomplete(false)
+      setLockToolMethod(false)
     }
   }, [open])
 
@@ -87,9 +96,24 @@ export default function UploadSDPModal({ open, onCancel, onNext }) {
     try {
       const res = await window.api.files.chooseSDP()
       if (!res) return
+
       setPicked(res)
-      setFileName(res.file_name.replace(/\.sdp$/i, ''))
+
+      // tampilkan file_name tanpa .sdp di input "File Name"
+      const rawName = res.file_name || ''
+      setFileName(rawName.replace(/\.sdp$/i, ''))
       setError('')
+
+      // cek apakah file adalah *.txt.sdp
+      if (isTxtSdpFile(rawName)) {
+        // auto-set dan kunci Tools & Methods
+        setTool('Encase')
+        setMethod('Hashfile Analytics')
+        setLockToolMethod(true)
+      } else {
+        // kalau bukan .txt.sdp, pastikan tidak terkunci
+        setLockToolMethod(false)
+      }
     } catch (e) {
       console.error('chooseSDP error:', e)
       setError('Gagal membuka dialog file. Cek console & IPC.')
@@ -210,7 +234,16 @@ export default function UploadSDPModal({ open, onCancel, onNext }) {
                   </button>
 
                   <button
-                    onClick={() => setPicked(null)}
+                    onClick={() => {
+                      setPicked(null)
+                      setFileName('')
+                      // kalau sebelumnya auto-lock dari .txt.sdp, reset juga Tool & Method
+                      if (lockToolMethod) {
+                        setTool('')
+                        setMethod('')
+                        setLockToolMethod(false)
+                      }
+                    }}
                     className="h-10 px-5 rounded app-title text-[15px]"
                     style={{ background: '#A50808', border: '1px solid #7B0A0A', color: '#fff' }}
                   >
@@ -248,17 +281,19 @@ export default function UploadSDPModal({ open, onCancel, onNext }) {
           <SelectField
             label="Tools"
             value={tool}
-            onChange={setTool}
+            onChange={lockToolMethod ? undefined : setTool}
             options={TOOL_OPTIONS}
             placeholder="Select tools"
+            disabled={lockToolMethod}
           />
 
           <SelectField
             label="Methods"
             value={method}
-            onChange={setMethod}
+            onChange={lockToolMethod ? undefined : setMethod}
             options={METHOD_OPTIONS}
             placeholder="Select method"
+            disabled={lockToolMethod}
           />
 
           <div>

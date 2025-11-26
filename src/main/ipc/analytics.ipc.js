@@ -4,6 +4,7 @@ import { ANALYTICS_METHODS } from '../../renderer/src/shared/analyticsMethods'
 import {
   startAnalyzing,
   startExtraction,
+  storeAnalyticFile,
   getAllAnalytics,
   getContactCorrelation,
   getSocialMediaCorrelation,
@@ -72,6 +73,11 @@ export default function registerAnalyticsIpc() {
   ipcMain.handle(
     'analytics:getAll',
     wrapIpc((p) => getAllAnalytics(p || {}))
+  )
+
+  ipcMain.handle(
+    'analytics:storeAnalyticFile',
+    wrapIpc((p) => storeAnalyticFile(p))
   )
 
   // results

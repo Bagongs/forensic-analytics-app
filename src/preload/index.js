@@ -48,6 +48,9 @@ contextBridge.exposeInMainWorld('api', {
     startExtraction: (p) => call('analytics:startExtraction', p),
     getAll: (p) => call('analytics:getAll', p),
 
+    // 🔥 Store analytic-file (link analytic ↔ file)
+    storeAnalyticFile: (p) => call('analytics:storeAnalyticFile', p),
+
     // Result endpoints
     contactCorrelation: (p) => call('analytics:getContactCorrelation', p),
     socialMediaCorrelation: (p) => call('analytics:getSocialMediaCorrelation', p),

@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 // src/main/services/analytics.service.js
 import api from './apiClient'
 import FormData from 'form-data'
@@ -113,6 +112,14 @@ export async function startExtraction({ analytic_id }) {
   } catch (err) {
     adaptError(err)
   }
+}
+
+// === Store Analytics FOR APK ONLY (QUERY: analytic_id, file_id) ===
+export async function storeAnalyticFile({ analytic_id, file_id }) {
+  // sesuai CURL: POST dengan query params, body kosong
+  return safePost('/api/v1/analytics/store-analytic-file', null, {
+    params: { analytic_id, file_id }
+  })
 }
 
 // === List Analytics (search, method) ===

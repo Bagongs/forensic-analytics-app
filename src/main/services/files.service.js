@@ -7,6 +7,17 @@ import axios from 'axios'
 
 export async function uploadData({ filePath, file_name, notes, type, tools, method }) {
   if (!filePath) throw new Error('uploadData: filePath kosong')
+
+  // 🔍 LOG: apa yang datang dari renderer
+  console.log('[FILES uploadData] payload from renderer:', {
+    filePath,
+    file_name,
+    notes,
+    type,
+    tools,
+    method
+  })
+
   const form = new FormData()
   form.append('file', fs.createReadStream(filePath))
   if (file_name) form.append('file_name', file_name)
@@ -15,10 +26,24 @@ export async function uploadData({ filePath, file_name, notes, type, tools, meth
   if (tools) form.append('tools', tools)
   if (method) form.append('method', method)
 
-  const { data } = await api.post('/api/v1/analytics/upload-data', form, {
-    headers: form.getHeaders()
-  })
-  return data // { upload_id, ... }
+  // (optional) bisa log headersnya
+  // console.log('[FILES uploadData] form headers:', form.getHeaders())
+
+  try {
+    const { data } = await api.post('/api/v1/analytics/upload-data', form, {
+      headers: form.getHeaders()
+    })
+
+    console.log('[FILES uploadData] API response OK:', data)
+    return data // { upload_id, ... }
+  } catch (err) {
+    // 🔍 LOG: detail error dari backend
+    console.error('[FILES uploadData] API ERROR status:', err?.response?.status)
+    console.error('[FILES uploadData] API ERROR data  :', err?.response?.data)
+
+    // lempar lagi supaya ketangkep di IPC
+    throw err
+  }
 }
 
 export async function uploadProgress({ upload_id, type = 'data' }) {

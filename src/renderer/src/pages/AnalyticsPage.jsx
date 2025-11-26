@@ -68,7 +68,6 @@ function routeForMethod(method = '') {
   if (key.includes('deep')) return '/detail/deep-communication'
   if (key.includes('hash')) return '/detail/hashfile-analytics'
   if (key.includes('social')) return '/detail/social-media-correlation'
-  if (key.includes('apk')) return '/detail/apk-analytics/result'
   return null
 }
 
@@ -438,9 +437,64 @@ export default function AnalyticsPage() {
                   const id = row.id ?? row.analytic_id ?? row.analysis_id
                   const name = row.name ?? row.analytic_name ?? 'Untitled'
                   const methodStr = row.method ?? row.methodLabel ?? ''
-                  const target = routeForMethod(methodStr)
+
+                  const isApk = methodStr.toLowerCase().includes('apk')
+                  const target = isApk ? null : routeForMethod(methodStr)
 
                   const goDetail = async () => {
+                    const baseState = { analysisId: id, method: methodStr, analysisName: name }
+
+                    // 🔥 KHUSUS APK ANALYTICS
+                    if (isApk) {
+                      try {
+                        // pakai IPC apk:get → apk.service.getApkAnalytic
+                        const res = await window.api.apk.get({ analytic_id: id })
+                        // res bentuknya: { status: 200, message: "Success", data: { ...detail... } }
+                        const detail = res?.data || {}
+                        const status = (detail.status || '').toString().toLowerCase()
+
+                        const analyticName = detail.analytic_name || name
+                        const fileSize = detail.file_size || '—'
+                        const fileId = detail.file_id
+
+                        let apkRoute = '/detail/apk-analytics'
+                        if (status === 'scanned') {
+                          apkRoute = '/detail/apk-analytics/result'
+                        } else if (status === 'pending') {
+                          apkRoute = '/detail/apk-analytics'
+                        } else {
+                          // fallback kalau status tidak dikenal → anggap belum di-scan
+                          apkRoute = '/detail/apk-analytics'
+                        }
+
+                        startTransition(() => {
+                          nav(apkRoute, {
+                            state: {
+                              ...baseState,
+                              campaign: analyticName,
+                              fileName: analyticName, // BE belum kirim file_name, jadi pakai analytic_name dulu
+                              fileSize,
+                              analyticId: id,
+                              file_id: fileId
+                            }
+                          })
+                        })
+                      } catch (server) {
+                        const redirected = handleRedirectContract(server, {
+                          nav,
+                          toast,
+                          ctx: baseState
+                        })
+                        if (redirected) return
+
+                        toast(server?.message || 'Unable to open APK analytics details', {
+                          icon: '⚠️'
+                        })
+                      }
+                      return
+                    }
+
+                    // ==== FLOW BIASA UNTUK METHOD NON-APK ====
                     if (!target || !id) return
                     try {
                       await prefetchDetailSafe({ method: methodStr, analytic_id: id })
@@ -458,7 +512,7 @@ export default function AnalyticsPage() {
 
                     startTransition(() => {
                       nav(target, {
-                        state: { analysisId: id, method: methodStr, analysisName: name }
+                        state: baseState
                       })
                     })
                   }
@@ -672,14 +726,32 @@ export default function AnalyticsPage() {
         onCancel={() => setOpenAPK(false)}
         onNext={async ({ analytic_name, file_id, file_name }) => {
           try {
+            // 1) start analyzing dulu
             const res = await window.api.analytics.startAnalyzing({
               analytic_name,
               method: 'APK Analytics'
             })
+
             const analyticId =
               res?.data?.analytic?.id || res?.data?.analytic_id || res?.analytic_id || res?.id
-            if (!analyticId) throw new Error('startAnalyzing: analytic_id tidak ditemukan')
 
+            if (!analyticId) {
+              throw new Error('startAnalyzing: analytic_id tidak ditemukan')
+            }
+
+            // 2) link analytic <-> file via store-analytic-file
+            const linkRes = await window.api.analytics.storeAnalyticFile({
+              analytic_id: analyticId,
+              file_id
+            })
+
+            // karena di service kita pakai safePost, bentuknya = payload kontrak:
+            // { status: 201, message: "...", data: {...} }
+            if (linkRes?.status !== 201 && linkRes?.status !== 200) {
+              throw new Error(linkRes?.message || 'store-analytic-file: status bukan 201/200')
+            }
+
+            // 3) kalau semua sukses → tutup modal dan pindah halaman detail
             setOpenAPK(false)
             nav('/detail/apk-analytics', {
               state: {
@@ -692,7 +764,9 @@ export default function AnalyticsPage() {
               }
             })
           } catch (e) {
-            console.error('[APK flow] startAnalyzing error:', e)
+            console.error('[APK flow] error:', e)
+            // kalau kamu pakai toast:
+            toast.error(e.message || 'Failed to start APK Analytics')
           }
         }}
       />
