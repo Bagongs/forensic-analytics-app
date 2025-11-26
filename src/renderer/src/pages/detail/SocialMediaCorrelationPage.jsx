@@ -259,7 +259,7 @@ export default function SocialMediaCorrelationPage() {
         setSummary(toStringSafe(payload?.summary || ''))
       } catch (e) {
         if (!mounted) return
-        setError(extractHttpMessage(e, 'Gagal memuat Social Media Correlation'))
+        setError(extractHttpMessage(e, 'Failed to load Social Media Correlation'))
         console.warn('[SMC] fetch error:', e)
       } finally {
         if (mounted) setLoading(false)
@@ -330,7 +330,7 @@ export default function SocialMediaCorrelationPage() {
       })
       setEditing(false)
     } catch (e) {
-      alert(extractHttpMessage(e, 'Gagal menyimpan ringkasan'))
+      alert(extractHttpMessage(e, 'Failed to save the summary'))
     } finally {
       savingRef.current = false
     }

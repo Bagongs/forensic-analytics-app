@@ -135,7 +135,7 @@ export default function ContactCorrelationPage() {
         setSummary(String(payload?.summary || ''))
       } catch (e) {
         if (!mounted) return
-        setError(extractHttpMessage(e, 'Gagal memuat Contact Correlation'))
+        setError(extractHttpMessage(e, 'Unable to load Contact Correlation'))
       } finally {
         if (mounted) setLoading(false)
       }
@@ -218,7 +218,7 @@ export default function ContactCorrelationPage() {
       await window.api.report.saveSummary({ analytic_id: analysisId, summary: summary })
       setIsEditing(false)
     } catch (e) {
-      alert(extractHttpMessage(e, 'Gagal menyimpan ringkasan'))
+      alert(extractHttpMessage(e, 'Failed to save the summary'))
     } finally {
       savingRef.current = false
     }

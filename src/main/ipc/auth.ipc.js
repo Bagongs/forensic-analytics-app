@@ -11,7 +11,8 @@ export default function registerAuthIpc(mainWindow) {
       return { ok: true, data } // data = {status, message, data}
     } catch (e) {
       // e dari apiClient sudah "clean" -> e.message = "Invalid credentials"
-      const msg = e && typeof e === 'object' && e.message ? e.message : e?.message || 'Login gagal'
+      const msg =
+        e && typeof e === 'object' && e.message ? e.message : e?.message || 'Failed to Login'
 
       return { ok: false, message: msg, status: e?.status }
     }
@@ -22,7 +23,7 @@ export default function registerAuthIpc(mainWindow) {
       await logout()
       return { ok: true }
     } catch (e) {
-      return { ok: false, message: e?.message || 'Logout gagal' }
+      return { ok: false, message: e?.message || 'Failed to Logout' }
     }
   })
 

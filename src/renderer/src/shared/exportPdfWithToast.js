@@ -30,7 +30,7 @@ export async function exportPdfWithToast({
     toast.success('PDF exported successfully. Please check your Downloads folder.')
     return res
   } catch (e) {
-    toast.error(extractHttpMessage(e, 'Export PDF gagal'))
+    toast.error(extractHttpMessage(e, 'Failed to Export PDF'))
     throw e
   } finally {
     toast.dismiss(t)

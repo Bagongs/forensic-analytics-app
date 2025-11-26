@@ -135,7 +135,7 @@ export default function HashfileAnalyticsPage() {
         setSummary(String(payload?.summary || ''))
       } catch (e) {
         if (!mounted) return
-        setError(extractHttpMessage(e, 'Gagal memuat Hashfile Analytics'))
+        setError(extractHttpMessage(e, 'Failed to load Hashfile Analytics'))
       } finally {
         if (mounted) setLoading(false)
       }
@@ -237,7 +237,7 @@ export default function HashfileAnalyticsPage() {
       await window.api.report.saveSummary({ analytic_id: analysisId, summary: summary })
       setIsEditing(false)
     } catch (e) {
-      alert(extractHttpMessage(e, 'Gagal menyimpan ringkasan'))
+      alert(extractHttpMessage(e, 'Failed to save the summary'))
     } finally {
       savingRef.current = false
     }

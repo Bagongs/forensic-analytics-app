@@ -54,9 +54,11 @@ async function fetchPdfBuffer({ analytic_id, person_name, device_id, source }) {
     // kemungkinan error JSON dari server
     try {
       const json = JSON.parse(Buffer.from(data).toString('utf8'))
-      throw new Error(json?.message || 'Export PDF gagal: respons bukan PDF')
+      throw new Error(
+        json?.message || 'Failed to export PDF: the response did not return a valid PDF'
+      )
     } catch {
-      throw new Error('Export PDF gagal: respons bukan PDF')
+      throw new Error('Failed to export PDF: the response did not return a valid PDF')
     }
   }
 

@@ -63,7 +63,7 @@ export const useAuth = create((set, get) => ({
       const res = await window.api.auth.login({ email, password })
 
       if (!res?.ok) {
-        const msg = res?.message || 'Login gagal'
+        const msg = res?.message || 'Failed to Login'
         set({ error: msg, authed: false, user: null })
         return { ok: false, error: msg }
       }
@@ -92,7 +92,7 @@ export const useAuth = create((set, get) => ({
 
       return { ok: true }
     } catch (e) {
-      const msg = e?.message || 'Login gagal'
+      const msg = e?.message || 'Failed to Login'
       set({ error: msg, authed: false, user: null })
       return { ok: false, error: msg }
     } finally {

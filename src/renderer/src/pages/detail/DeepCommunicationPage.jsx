@@ -182,7 +182,7 @@ export default function DeepCommunicationPage() {
         setActiveDeviceId((prev) => prev ?? devs[0]?.id ?? null)
       } catch (e) {
         if (!mounted) return
-        setError(extractHttpMessage(e, 'Gagal memuat Deep Communication Analytics'))
+        setError(extractHttpMessage(e, 'Failed to load Deep Communication Analytics'))
         console.warn('[DeepComm] initial fetch error:', e)
       } finally {
         if (mounted) setLoading(false)
@@ -370,7 +370,7 @@ export default function DeepCommunicationPage() {
       await window.api.report.saveSummary({ analytic_id: analysisId, summary: summary })
       setEditing(false)
     } catch (e) {
-      alert(extractHttpMessage(e, 'Gagal menyimpan ringkasan'))
+      alert(extractHttpMessage(e, 'Failed to save the summary'))
     } finally {
       savingRef.current = false
     }
