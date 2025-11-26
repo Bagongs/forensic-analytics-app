@@ -562,6 +562,8 @@ export default function SocialMediaCorrelationPage() {
           actionBgImage={editBg}
           actionOffset={{ top: 15, right: 24 }}
           onAction={onSummaryAction}
+          maxBodyHeight={240}
+          autoGrow={false}
         />
       </div>
     </div>

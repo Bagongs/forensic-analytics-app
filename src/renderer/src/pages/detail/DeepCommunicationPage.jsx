@@ -665,9 +665,10 @@ export default function DeepCommunicationPage() {
           actionLabel={actionLabel}
           actionIcon={actionIcon}
           actionBgImage={editBg}
-          // actionSize={{ w: 131.62269592285156, h: 58.389015197753906 }}
           actionOffset={{ top: 15, right: 24 }}
           onAction={onSummaryAction}
+          maxBodyHeight={240}
+          autoGrow={false}
         />
       </div>
     </div>

@@ -4,9 +4,13 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 /**
  * SummaryBox
- * - Tombol action (Add/Edit/Save) default ukuran ~93.62 x 41.53 px (Figma),
- *   tapi responsif via clamp().
+ * - Ukuran tombol action default mengikuti desain Figma (~93.62 x 41.53 px) tapi responsif via clamp().
  * - actionSize.w/h boleh number (px) ATAU string CSS (mis. 'clamp(...)').
+ * - maxBodyHeight: tinggi maksimum area teks (baik autoGrow maupun scroll).
+ * - autoGrow:
+ *   - true  -> tinggi textarea menyesuaikan konten hingga maxBodyHeight (tanpa scrollbar).
+ *   - false -> tinggi area tetap, teks panjang di-scroll (overflowY: auto).
+ *   Di kedua mode (edit & view) dipakai logika yang sama, jadi ukuran box konsisten.
  */
 export default function SummaryBox({
   title = 'Summary',
@@ -28,32 +32,45 @@ export default function SummaryBox({
   editable = true,
   rowsMin = 3,
 
+  // tinggi maksimal area teks
+  maxBodyHeight = 240,
+
+  // kontrol perilaku tinggi
+  autoGrow = true,
+
+  // styling eksternal wrapper
+  className = '',
+
   // style params
   gradient = 'linear-gradient(180deg, #1C2737 -94.25%, #1B2533 100%)',
   borderColor = '#4C607D',
   borderW = 1.5,
   cut = 18,
 
-  // warna efek glow
-  glowColor = '#FFFFFF', // putih utama
-  glowShadowAlpha = 0.7, // intensitas shadow putih
-  glowAuraAlpha = 0.5 // intensitas aura radial
+  // efek glow
+  glowColor = '#FFFFFF',
+  glowShadowAlpha = 0.7,
+  glowAuraAlpha = 0.5 // disiapkan kalau nanti mau aura radial
 }) {
   const textRef = useRef(null)
   const boxRef = useRef(null)
-
-  // ========== AUTOSIZE TEXTAREA ==========
-  useEffect(() => {
-    if (!textRef.current) return
-    const el = textRef.current
-    el.style.height = 'auto'
-    el.style.height = `${el.scrollHeight}px`
-  }, [value])
 
   // autofocus saat masuk edit
   useEffect(() => {
     if (editable && textRef.current) textRef.current.focus()
   }, [editable])
+
+  // ========== AUTOGROW TINGGI TEXTAREA (BERLAKU DI EDIT & VIEW) ==========
+  useEffect(() => {
+    if (!autoGrow) return
+    if (!textRef.current) return
+    const el = textRef.current
+
+    // reset dulu supaya scrollHeight akurat
+    el.style.height = 'auto'
+    const next = Math.min(el.scrollHeight, maxBodyHeight)
+    el.style.height = `${next}px`
+  }, [value, editable, autoGrow, maxBodyHeight])
 
   // ========== UKUR CONTAINER UNTUK SVG BORDER ==========
   const [size, setSize] = useState({ w: 0, h: 0 })
@@ -85,8 +102,22 @@ export default function SummaryBox({
 
   const glowShadow = `0 0 14px ${hexToRgba(glowColor, glowShadowAlpha)}`
 
+  // style dasar area teks
+  const bodyStyle = {
+    lineHeight: 1.5,
+    minHeight: 80,
+    maxHeight: maxBodyHeight,
+    overflowY: autoGrow ? 'hidden' : 'auto', // kalau autoGrow, tinggi diatur JS & kita hide scrollbar
+    paddingRight: 4
+  }
+
+  const handleChange = (e) => {
+    if (!editable) return
+    onChange?.(e.target.value)
+  }
+
   return (
-    <div className="relative w-full" ref={boxRef}>
+    <div ref={boxRef} className={['relative', 'w-full', className].filter(Boolean).join(' ')}>
       {/* SVG border di belakang */}
       <svg
         className="absolute inset-0 pointer-events-none"
@@ -120,26 +151,21 @@ export default function SummaryBox({
         {/* Header */}
         <div className="font-[Aldrich] text-[16px] mb-2 text-[#F4F6F8]">{title}</div>
 
-        {/* Body */}
-        {editable ? (
-          <textarea
-            ref={textRef}
-            value={value}
-            onChange={(e) => onChange?.(e.target.value)}
-            placeholder={placeholder}
-            rows={rowsMin}
-            className="w-full resize-none bg-transparent outline-none font-[Noto Sans] text-[14px] text-[#E7E9EE] placeholder-[#9AA3B2]"
-            style={{
-              lineHeight: 1.5,
-              overflow: 'hidden',
-              minHeight: 36
-            }}
-          />
-        ) : (
-          <p className="font-[Noto Sans] text-[14px] text-[#E7E9EE] whitespace-pre-wrap">
-            {value || placeholder}
-          </p>
-        )}
+        {/* Body (selalu textarea, supaya ukuran konsisten) */}
+        <textarea
+          ref={textRef}
+          value={value}
+          onChange={handleChange}
+          placeholder={placeholder}
+          rows={rowsMin}
+          readOnly={!editable}
+          className={[
+            'w-full resize-none bg-transparent outline-none',
+            'font-[Noto Sans] text-[14px] text-[#E7E9EE]',
+            'placeholder-[#9AA3B2]'
+          ].join(' ')}
+          style={bodyStyle}
+        />
 
         {/* Tombol kanan-atas */}
         {onAction && (

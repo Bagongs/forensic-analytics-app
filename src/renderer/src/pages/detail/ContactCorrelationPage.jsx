@@ -472,9 +472,10 @@ export default function ContactCorrelationPage() {
           actionLabel={actionLabel}
           actionIcon={actionIcon}
           actionBgImage={editBg}
-          // actionSize={{ w: 131.6227, h: 58.389 }}
           actionOffset={{ top: 15, right: 24 }}
           onAction={onSummaryAction}
+          maxBodyHeight={240}
+          autoGrow={false}
         />
       </div>
     </div>
