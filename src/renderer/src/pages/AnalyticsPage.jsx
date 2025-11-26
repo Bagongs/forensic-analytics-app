@@ -97,21 +97,17 @@ async function prefetchDetailSafe({ method, analytic_id }) {
   const a = window.api?.analytics
   if (!a) return
 
-  // helper untuk unwrap result ipc
   const unwrap = (res) => {
-    // ✅ FIX: jangan buang payload error (biar contract redirect kebaca)
     if (res?.ok === false) throw res.error ?? res
     return res?.data ?? res
   }
 
-  // 1) satu pintu
   if (typeof a.fetchByMethod === 'function') {
     const r = await a.fetchByMethod({ method, analytic_id })
     unwrap(r)
     return
   }
 
-  // 2) fallback
   const m = String(method || '').toLowerCase()
   if (m.includes('contact')) {
     const r = await (a.getContactCorrelation?.({ analytic_id }) ||
@@ -177,7 +173,7 @@ export default function AnalyticsPage() {
     }
   }
 
-  const fetchHistory = async ({ search = historySearch, methods = methodFilter } = {}) => {
+  const fetchHistory = async ({ search = '', methods = methodFilter } = {}) => {
     try {
       const methodParam = methods?.length ? methods.join(',') : undefined
       const res = await window.api.analytics.getAll({ search, method: methodParam })
@@ -197,7 +193,20 @@ export default function AnalyticsPage() {
   const toggleMethodFilter = (val) =>
     setMethodFilter((prev) => (prev.includes(val) ? prev.filter((v) => v !== val) : [...prev, val]))
 
-  const filteredHistory = useMemo(() => historyRows, [historyRows])
+  /* ========= CLIENT-SIDE SEARCH (like UserManagement.jsx) ========= */
+  const filteredHistory = useMemo(() => {
+    const s = historySearch.trim().toLowerCase()
+    if (!s) return historyRows
+
+    return historyRows.filter((row) => {
+      const name = (row.name ?? row.analytic_name ?? '').toLowerCase()
+      const methodStr = (row.method ?? row.methodLabel ?? '').toLowerCase()
+      const summary = (row.summary ?? row.notes ?? '').toLowerCase()
+      const dateStr = (row.date || formatDate(row.created_at) || '').toLowerCase()
+
+      return name.includes(s) || methodStr.includes(s) || summary.includes(s) || dateStr.includes(s)
+    })
+  }, [historyRows, historySearch])
 
   const cancelUpload = () => {
     pollingAbortRef.current = true
@@ -380,9 +389,6 @@ export default function AnalyticsPage() {
                   <input
                     value={historySearch}
                     onChange={(e) => setHistorySearch(e.target.value)}
-                    onKeyDown={(e) =>
-                      e.key === 'Enter' && fetchHistory({ search: e.currentTarget.value })
-                    }
                     className="bg-transparent outline-none text-sm w-full"
                     placeholder="Search analytics"
                   />
@@ -428,7 +434,7 @@ export default function AnalyticsPage() {
                 )}
 
                 {filteredHistory.map((row) => {
-                  const notes = row.notes ?? ''
+                  const notes = row.notes ?? row.summary ?? ''
                   const id = row.id ?? row.analytic_id ?? row.analysis_id
                   const name = row.name ?? row.analytic_name ?? 'Untitled'
                   const methodStr = row.method ?? row.methodLabel ?? ''
@@ -601,9 +607,6 @@ export default function AnalyticsPage() {
               lastStatus = s
               lastMessage = msg
 
-              // === DETEKSI FAILED DARI CONTRACT ===
-              // status: "Failed" / upload_status: "Failed"
-              // message: "File upload failed. Please upload this file using Tools {detected_tool}"
               const isFailedStatus = s === 'failed'
               const isFailedMessage =
                 msg.toLowerCase().includes('upload failed') ||
@@ -621,7 +624,6 @@ export default function AnalyticsPage() {
                 break
               }
 
-              // === DETEKSI SUCCESS ===
               const isSuccessStatus = s === 'success' || s.includes('success')
               if (isSuccessStatus || (Number.isFinite(pct) && pct >= 100)) {
                 done = true
@@ -631,13 +633,11 @@ export default function AnalyticsPage() {
               await new Promise((r) => setTimeout(r, 800))
             }
 
-            // kalau user cancel di tengah, jangan lanjut update
             if (pollingAbortRef.current) return
 
             if (lastStatus === 'success') {
               setProgStatus('success')
               setProgLabel(lastMessage || 'Upload successful')
-              // optionally force 100%
               if (lastPct < 100) setProgPct(100)
               setTimeout(() => setProgOpen(false), 600)
               fetchUploaded({})
@@ -655,10 +655,7 @@ export default function AnalyticsPage() {
               name: e?.name
             })
 
-            const ax =
-              e?.args?.[0] || // axios error dari IPC
-              e?.cause ||
-              e
+            const ax = e?.args?.[0] || e?.cause || e
 
             const backendMessage =
               ax?.readableMessage || ax?.response?.data?.message || ax?.message || 'Upload failed'
@@ -722,7 +719,7 @@ export default function AnalyticsPage() {
               res?.data?.analytic?.id || res?.analytic_id || res?.data?.analytic_id || res?.id
             if (!analyticId) throw new Error('analytic_id tidak ditemukan')
 
-            await fetchHistory({ search: historySearch, methods: methodFilter })
+            await fetchHistory({ search: '', methods: methodFilter })
             setOpenStart(false)
             nav('/analytics/devices', {
               state: {
@@ -744,12 +741,12 @@ export default function AnalyticsPage() {
         onToggle={toggleMethodFilter}
         onApply={() => {
           setOpenFilter(false)
-          fetchHistory({ search: historySearch, methods: methodFilter })
+          fetchHistory({ search: '', methods: methodFilter })
         }}
         onClear={() => {
           setMethodFilter([])
           setOpenFilter(false)
-          fetchHistory({ search: historySearch, methods: [] })
+          fetchHistory({ search: '', methods: [] })
         }}
         onClose={() => setOpenFilter(false)}
       />
