@@ -446,7 +446,7 @@ export default function AnalyticsPage() {
                       })
                       if (redirected) return
 
-                      toast(server?.message || 'Gagal membuka detail analytics', { icon: '⚠️' })
+                      toast(server?.message || 'Unable to open analytics details', { icon: '⚠️' })
                       return
                     }
 
@@ -679,7 +679,7 @@ export default function AnalyticsPage() {
             })
           } catch (e) {
             const server = e
-            toast(server?.message || 'Start analyzing gagal', { icon: '⚠️' })
+            toast('Failed to start analysis', { icon: '⚠️' })
           }
         }}
       />

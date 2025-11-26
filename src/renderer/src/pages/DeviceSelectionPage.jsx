@@ -147,7 +147,7 @@ export default function DeviceSelectionPage() {
       setAddOpen(false)
     } catch (e) {
       const server = e
-      toast('Gagal menambahkan device', { icon: '⚠️' })
+      toast('Device could not be added.', { icon: '⚠️' })
     }
   }
 
@@ -186,7 +186,7 @@ export default function DeviceSelectionPage() {
       })
       if (redirected) return
 
-      toast(server?.message || 'Gagal memulai extraction', { icon: '⚠️' })
+      toast(server?.message || 'Unable to start extraction', { icon: '⚠️' })
     } finally {
       setLoadingOpen(false)
       startingRef.current = false

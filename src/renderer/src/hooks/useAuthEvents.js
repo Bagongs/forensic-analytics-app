@@ -9,7 +9,7 @@ export default function useAuthEvents({ toast }) {
   useEffect(() => {
     const offExpired = window.authEvents?.onExpired?.(() => {
       try {
-        toast?.error?.('Sesi berakhir, silakan login kembali.')
+        toast?.error?.('Session has ended. Please sign in again.')
       } catch {}
       const path = loc.pathname + loc.search
       sessionStorage.setItem('postLoginRedirect', path)
@@ -18,7 +18,7 @@ export default function useAuthEvents({ toast }) {
 
     const offUpdated = window.authEvents?.onUpdated?.(() => {
       // Optional: tampilkan indikator “Token diperbarui” dsb
-      // toast?.success?.('Token diperbarui.')
+      toast?.success?.('The token has been updated.')
     })
 
     return () => {
