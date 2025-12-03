@@ -20,6 +20,10 @@ export default function AnalyticsCampaignModal({
     onNext?.({ campaign })
     // tidak auto-close di sini, parent yang menentukan (supaya bisa reset state)
   }
+  function truncateText(text, max = 16) {
+    if (!text) return '-'
+    return text.length > max ? text.substring(0, max) + '...' : text
+  }
 
   return (
     <Modal
@@ -77,8 +81,11 @@ export default function AnalyticsCampaignModal({
               <div className="text-[12px] uppercase tracking-[0.14em] text-[#89A4D6]/80">
                 File Name
               </div>
-              <div className="mt-1 text-[17px] font-semibold leading-tight truncate">
-                {fileName}
+              <div
+                title={fileName}
+                className="mt-1 text-[17px] font-semibold leading-tight truncate"
+              >
+                {truncateText(fileName, 20)}
               </div>
             </div>
             <div className="mt-4">
