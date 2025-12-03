@@ -251,12 +251,12 @@ export default function AnalyticsPage() {
               {/* === DESKTOP/TABLET TABLE (md+) === */}
               <div className="hidden md:block">
                 {/* Header */}
-                <div className="overflow-x-auto">
+                <div className="overflow-x-hidden">
                   <div
                     className="
                       grid text-sm bg-[#395070] text-[#EDC702] shrink-0
                       md:min-w-[760px]
-                      md:grid-cols-[140px_220px_240px_minmax(0,1fr)]
+                      md:grid-cols-[140px_220px_220px_minmax(0,1fr)]
                       [@media(min-width:2560px)_and_(max-height:1500px)]:min-w-[1100px]
                       [@media(min-width:2560px)_and_(max-height:1500px)]:grid-cols-[220px_320px_360px_minmax(0,1fr)]
                     "
@@ -292,12 +292,12 @@ export default function AnalyticsPage() {
                     const notes = row.notes ?? ''
 
                     return (
-                      <div key={id} className="overflow-x-auto">
+                      <div key={id} className="overflow-x-hidden">
                         <div
                           className="
                             grid items-center hover:bg-[#0f1520]
                             md:min-w-[760px]
-                            md:grid-cols-[140px_220px_240px_minmax(0,1fr)]
+                            md:grid-cols-[140px_220px_220px_minmax(0,1fr)]
                             [@media(min-width:2560px)_and_(max-height:1500px)]:min-w-[1100px]
                             [@media(min-width:2560px)_and_(max-height:1500px)]:grid-cols-[220px_320px_360px_minmax(0,1fr)]
                           "
@@ -317,7 +317,7 @@ export default function AnalyticsPage() {
                             className="px-4 py-3 overflow-hidden whitespace-nowrap"
                             title={notes || '-'}
                           >
-                            {truncateText(notes, 24)}
+                            {truncateText(notes, 14)}
                           </div>
                         </div>
                       </div>

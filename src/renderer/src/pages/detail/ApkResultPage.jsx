@@ -175,7 +175,7 @@ export default function ApkResultPage() {
       </div>
 
       {/* Konten turun dari HeaderBar (kalau fixed) */}
-      <div className="pt-16 h-[calc(100vh-64px)] overflow-hidden">
+      <div className="pt-16 h-[calc(100vh-64px)] overflow-hidden -mt-14">
         {/* TOP BAR */}
         <div className="flex items-center justify-between px-[3vw] pt-[2vh]">
           <div className="flex items-center gap-4">
