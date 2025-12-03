@@ -13,7 +13,12 @@ export default function StartAnalyzingModal({ open, onCancel, onNext }) {
   const [name, setName] = useState('')
   const [method, setMethod] = useState('') // SELALU string
 
-  const METHOD_OPTIONS = useMemo(() => ANALYTICS_METHODS.map((v) => ({ value: v, label: v })), [])
+  const METHOD_OPTIONS = useMemo(
+    () =>
+      ANALYTICS_METHODS.filter((v) => v !== 'APK Analytics') // <-- exclude disini
+        .map((v) => ({ value: v, label: v })),
+    []
+  )
 
   const disableNext = !name.trim() || !method
 
