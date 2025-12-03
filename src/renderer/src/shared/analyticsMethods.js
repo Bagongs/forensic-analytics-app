@@ -3,8 +3,7 @@ export const ANALYTICS_METHODS = [
   'Deep Communication Analytics',
   'Social Media Correlation',
   'Contact Correlation',
-  'Hashfile Analytics',
-  'APK Analytics'
+  'Hashfile Analytics'
 ]
 
 export function isValidMethod(m) {
