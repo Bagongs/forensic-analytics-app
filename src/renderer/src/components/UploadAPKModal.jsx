@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import Modal from './Modal'
 import UploadProgress from './UploadProgress'
 import AnalyticsCampaignModal from './apk/AnalyticsCampaignModal'
+import toast from 'react-hot-toast'
 
 /* ===== Progress normalizer (toleran variasi BE) ===== */
 function normalizeUploadProgress(res) {
@@ -68,10 +69,20 @@ export default function UploadAPKModal({ open, onCancel, onNext }) {
 
   const handleFileInput = (e) => {
     const f = e.target.files?.[0] ?? null
-    if (f) {
-      setFileObj(f)
-      setPicked((prev) => ({ ...(prev || {}), file_name: f.name }))
+    if (!f) return
+
+    const fileName = f.name
+
+    const ipaStrict = /^[A-Za-z0-9_-]+\.ipa$/i
+
+    if (!ipaStrict.test(fileName)) {
+      toast.error('Filename is not allowed. only .ipa accepted')
+      e.target.value = ''
+      return
     }
+
+    setFileObj(f)
+    setPicked((prev) => ({ ...(prev || {}), file_name: f.name }))
   }
 
   const getUploadSource = () => {

@@ -449,6 +449,7 @@ export default function AnalyticsPage() {
                       try {
                         // pakai IPC apk:get → apk.service.getApkAnalytic
                         const res = await window.api.apk.get({ analytic_id: id })
+                        console.log('APK analytic detail fetched:', res)
                         // res bentuknya: { status: 200, message: "Success", data: { ...detail... } }
                         const detail = res?.data || {}
                         const status = (detail.status || '').toString().toLowerCase()
@@ -758,7 +759,7 @@ export default function AnalyticsPage() {
                 campaign: analytic_name,
                 analysisId: analyticId,
                 fileName: file_name,
-                fileSize: '—',
+                fileSize: linkRes?.data?.file_size ?? '—',
                 analyticId,
                 file_id
               }

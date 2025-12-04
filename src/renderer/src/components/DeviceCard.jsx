@@ -122,7 +122,7 @@ export default function DeviceCard({
             <div className="text-[12px] uppercase tracking-[0.14em] text-[#89A4D6]/80">
               File Size
             </div>
-            <div className="mt-1 text-[22px] font-bold leading-none">{fileSize}</div>
+            <div className="mt-1 text-[18px]  leading-none">{fileSize}</div>
           </div>
         </div>
       </div>

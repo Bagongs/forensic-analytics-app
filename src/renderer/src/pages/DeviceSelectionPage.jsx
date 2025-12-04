@@ -40,7 +40,7 @@ function toDeviceCardModel(d) {
     ownerName: d?.name ?? d?.owner_name ?? '-',
     phoneNumber: d?.phone_number ?? '-',
     fileName: d?.file?.file_name ?? d?.file_name ?? '-',
-    fileSize: d?.file?.total_size_formatted ?? d?.total_size_formatted ?? '—',
+    fileSize: d?.file?.file_size ?? d?.file_size ?? '—',
     deviceId: d?.device_id ? `ID ${d.device_id}` : fid ? `ID ${fid}` : 'ID –',
     file_id: fid
   }
@@ -296,7 +296,7 @@ export default function DeviceSelectionPage() {
         <div className="mt-5 w-full" style={{ border: '1px solid #FFFFFF', opacity: 0.25 }} />
 
         {devices.length > 0 && devices.length < MIN_DEVICES && (
-          <div className="text-center text-sm" style={{ color: 'var(--dim)' }}>
+          <div className="text-center text-sm -mb-5 mt-2" style={{ color: 'var(--dim)' }}>
             A minimum of {MIN_DEVICES} devices is required to start data extraction.
           </div>
         )}
