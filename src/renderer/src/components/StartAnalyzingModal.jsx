@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import Modal from './Modal'
 import SelectField from './SelectField'
 import { ANALYTICS_METHODS, coerceMethod } from '@renderer/shared/analyticsMethods'
+import { validateSafeHumanName } from '../utils/safeTextValidators'
 
 const INPUT_BG = '#202C3C'
 const INPUT_BORDER = '#394F6F'
@@ -11,6 +12,7 @@ const TEXT = '#E7E9EE'
 
 export default function StartAnalyzingModal({ open, onCancel, onNext }) {
   const [name, setName] = useState('')
+  const [nameError, setNameError] = useState('')
   const [method, setMethod] = useState('') // SELALU string
 
   const METHOD_OPTIONS = useMemo(
@@ -20,7 +22,23 @@ export default function StartAnalyzingModal({ open, onCancel, onNext }) {
     []
   )
 
-  const disableNext = !name.trim() || !method
+  const disableNext = !name.trim() || !!nameError || !method
+
+  const handleNext = () => {
+    // re-validate sebelum kirim, supaya gak bisa di-bypass
+    const { ok, error } = validateSafeHumanName(name, 'Analytics name')
+    if (!ok) {
+      setNameError(error)
+      return
+    }
+
+    if (!method) return
+
+    onNext?.({
+      name: name.trim(),
+      method: String(method).trim()
+    })
+  }
 
   const footer = (
     <div className="flex justify-end gap-3">
@@ -35,7 +53,7 @@ export default function StartAnalyzingModal({ open, onCancel, onNext }) {
       <button
         type="button"
         disabled={disableNext}
-        onClick={() => onNext?.({ name: name.trim(), method: String(method).trim() })}
+        onClick={handleNext}
         className="px-5 h-10 text-sm rounded-sm disabled:opacity-60"
         style={{ background: 'var(--gold)', color: '#101217', border: 'none' }}
       >
@@ -59,11 +77,21 @@ export default function StartAnalyzingModal({ open, onCancel, onNext }) {
           <input
             name="analytics-name"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => {
+              const v = e.target.value
+              setName(v)
+              const { ok, error } = validateSafeHumanName(v, 'Analytics name')
+              setNameError(ok ? '' : error)
+            }}
             placeholder="Analytics Name"
             className="w-full h-12 px-4 rounded-[10px] outline-none"
-            style={{ background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, color: TEXT }}
+            style={{
+              background: INPUT_BG,
+              border: `1px solid ${nameError ? '#f87171' : INPUT_BORDER}`,
+              color: TEXT
+            }}
           />
+          {nameError && <div className="mt-1 text-xs text-red-400">{nameError}</div>}
         </div>
 
         <SelectField

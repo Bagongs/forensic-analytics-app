@@ -1,6 +1,8 @@
+// src/renderer/src/components/AddDeviceModal.jsx
 /* eslint-disable react/prop-types */
 import { useMemo, useState } from 'react'
 import Modal from './Modal'
+import { validateSafeHumanName } from '../utils/safeTextValidators'
 
 /* === ICON SEARCH === */
 function IconSearch(props) {
@@ -27,7 +29,9 @@ const COLORS = {
   rowBottomBorder: '#C3CFE0'
 }
 
-function InputField({ label, value, onChange, placeholder }) {
+function InputField({ label, value, onChange, placeholder, error }) {
+  const hasError = !!error
+
   return (
     <div>
       <label className="block mb-2">{label}</label>
@@ -38,10 +42,11 @@ function InputField({ label, value, onChange, placeholder }) {
         className="w-full h-12 px-4 rounded-[10px] outline-none"
         style={{
           background: COLORS.inputBg,
-          border: `1px solid ${COLORS.inputBorder}`,
+          border: `1px solid ${hasError ? '#f87171' : COLORS.inputBorder}`,
           color: COLORS.text
         }}
       />
+      {hasError && <div className="mt-1 text-xs text-red-400">{error}</div>}
     </div>
   )
 }
@@ -120,6 +125,7 @@ export default function AddDeviceModal({
 }) {
   const [query, setQuery] = useState('')
   const [ownerName, setOwnerName] = useState('')
+  const [ownerNameError, setOwnerNameError] = useState('')
   const [phoneNumber, setPhoneNumber] = useState('')
   const [selectedId, setSelectedId] = useState(null)
   const [submitting, setSubmitting] = useState(false)
@@ -155,10 +161,18 @@ export default function AddDeviceModal({
     [filtered, selectedId]
   )
 
-  const disableNext = submitting || !ownerName.trim() || !phoneNumber.trim() || !selectedFile
+  const disableNext =
+    submitting || !ownerName.trim() || !phoneNumber.trim() || !selectedFile || !!ownerNameError
 
   const handleNext = () => {
+    const { ok, error } = validateSafeHumanName(ownerName)
+    if (!ok) {
+      setOwnerNameError(error)
+      return
+    }
+
     if (disableNext) return
+
     setSubmitting(true)
     try {
       onNext?.({
@@ -166,8 +180,9 @@ export default function AddDeviceModal({
         phoneNumber: phoneNumber.trim(),
         file: selectedFile
       })
-      // reset field setelah parent terima, biar siap tambah lagi
+      // reset field setelah parent terima
       setOwnerName('')
+      setOwnerNameError('')
       setPhoneNumber('')
       setQuery('')
       setSelectedId(null)
@@ -187,6 +202,7 @@ export default function AddDeviceModal({
         type="button"
         onClick={() => {
           setOwnerName('')
+          setOwnerNameError('')
           setPhoneNumber('')
           setQuery('')
           setSelectedId(null)
@@ -231,7 +247,17 @@ export default function AddDeviceModal({
     >
       {/* FORM ATAS */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
-        <InputField label="Name" value={ownerName} onChange={setOwnerName} placeholder="Name" />
+        <InputField
+          label="Name"
+          value={ownerName}
+          onChange={(v) => {
+            setOwnerName(v)
+            const { ok, error } = validateSafeHumanName(v)
+            setOwnerNameError(ok ? '' : error)
+          }}
+          placeholder="Name"
+          error={ownerNameError}
+        />
         <PhoneNumberField
           label="Phone Number"
           value={phoneNumber}

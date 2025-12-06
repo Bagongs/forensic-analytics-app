@@ -3,6 +3,13 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import iconApp from '@renderer/assets/icons/icon_app.svg'
 import { useAuth } from '@renderer/store/auth'
 
+function isValidEmail(value) {
+  if (!value) return false
+  // Regex simple, cukup untuk UI (validasi kuat tetap di backend)
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return re.test(value)
+}
+
 export default function LoginPage() {
   const nav = useNavigate()
   const location = useLocation()
@@ -10,18 +17,44 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
+
+  const [error, setError] = useState('') // error global (login gagal)
+  const [emailError, setEmailError] = useState('')
+  const [passwordError, setPasswordError] = useState('')
 
   const busy = storeBusy
 
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
-    const { ok, error: errMsg } = await login({ email, password })
+    setEmailError('')
+    setPasswordError('')
+
+    // ====== VALIDASI MANUAL (notif teks) ======
+    let hasError = false
+
+    if (!email.trim()) {
+      setEmailError('Email is required.')
+      hasError = true
+    } else if (!isValidEmail(email.trim())) {
+      setEmailError('Please enter a valid email address.')
+      hasError = true
+    }
+
+    if (!password.trim()) {
+      setPasswordError('Password is required.')
+      hasError = true
+    }
+
+    if (hasError) return
+
+    // ====== LOGIN KE STORE ======
+    const { ok, error: errMsg } = await login({ email: email.trim(), password })
     if (!ok) {
-      setError(errMsg || 'Login gagal')
+      setError(errMsg || 'Login gagal. Periksa kembali email dan password Anda.')
       return
     }
+
     const to = location.state?.from?.pathname || '/analytics'
     nav(to, { replace: true })
   }
@@ -70,35 +103,71 @@ export default function LoginPage() {
               SIGN IN
             </h2>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            {/* noValidate = matikan notif bawaan browser */}
+            <form onSubmit={handleSubmit} noValidate className="space-y-6">
+              {/* EMAIL */}
               <div>
                 <label className="block text-sm mb-2" style={{ color: 'var(--dim)' }}>
                   Email
                 </label>
                 <input
                   type="email"
-                  required
+                  name="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value)
+                    // optional live validation ringan
+                    if (emailError) {
+                      const val = e.target.value
+                      if (!val.trim()) setEmailError('Email is required.')
+                      else if (!isValidEmail(val.trim()))
+                        setEmailError('Please enter a valid email address.')
+                      else setEmailError('')
+                    }
+                  }}
                   className="w-full bg-transparent outline-none border-b pb-2"
-                  style={{ borderColor: '#394F6F', color: 'var(--text)' }}
+                  style={{
+                    borderColor: emailError ? '#ff6b6b' : '#394F6F',
+                    color: 'var(--text)'
+                  }}
                 />
+                {emailError && (
+                  <p className="mt-1 text-xs" style={{ color: '#ff6b6b' }}>
+                    {emailError}
+                  </p>
+                )}
               </div>
 
+              {/* PASSWORD */}
               <div>
                 <label className="block text-sm mb-2" style={{ color: 'var(--dim)' }}>
                   Password
                 </label>
                 <input
                   type="password"
-                  required
+                  name="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value)
+                    if (passwordError) {
+                      const val = e.target.value
+                      setPasswordError(val.trim() ? '' : 'Password is required.')
+                    }
+                  }}
                   className="w-full bg-transparent outline-none border-b pb-2"
-                  style={{ borderColor: '#394F6F', color: 'var(--text)' }}
+                  style={{
+                    borderColor: passwordError ? '#ff6b6b' : '#394F6F',
+                    color: 'var(--text)'
+                  }}
                 />
+                {passwordError && (
+                  <p className="mt-1 text-xs" style={{ color: '#ff6b6b' }}>
+                    {passwordError}
+                  </p>
+                )}
               </div>
 
+              {/* ERROR GLOBAL (login gagal dari backend / store) */}
               {(error || storeError) && (
                 <p className="text-sm" style={{ color: '#ff6b6b' }}>
                   {error || storeError}

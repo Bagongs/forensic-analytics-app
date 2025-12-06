@@ -5,6 +5,7 @@ import Modal from './Modal'
 import SelectField from './SelectField'
 import UnsavedChangesModal from './UnsavedChangesModal'
 import IncompleteFormModal from './IncompleteFormModal'
+import { validateSafeFileName } from '../utils/safeTextValidators'
 
 const COLORS = {
   inputBg: '#202C3C',
@@ -38,7 +39,9 @@ const METHOD_OPTIONS = [
   { value: 'Social Media Correlation', label: 'Social Media Correlation' }
 ]
 
-function InputField({ label, value, onChange, placeholder = 'Name' }) {
+function InputField({ label, value, onChange, placeholder = 'Name', error }) {
+  const hasError = !!error
+
   return (
     <div>
       <label className="block mb-2">{label}</label>
@@ -49,10 +52,11 @@ function InputField({ label, value, onChange, placeholder = 'Name' }) {
         className="w-full h-12 px-4 outline-none"
         style={{
           background: COLORS.inputBg,
-          border: `1px solid ${COLORS.inputBorder}`,
+          border: `1px solid ${hasError ? '#f87171' : COLORS.inputBorder}`,
           color: COLORS.text
         }}
       />
+      {hasError && <div className="mt-1 text-xs text-red-400">{error}</div>}
     </div>
   )
 }
@@ -65,6 +69,7 @@ function isTxtSdpFile(name = '') {
 export default function UploadSDPModal({ open, onCancel, onNext }) {
   const [picked, setPicked] = useState(null)
   const [fileName, setFileName] = useState('')
+  const [fileNameError, setFileNameError] = useState('')
   const [type, setType] = useState('')
   const [tool, setTool] = useState('')
   const [method, setMethod] = useState('')
@@ -81,6 +86,7 @@ export default function UploadSDPModal({ open, onCancel, onNext }) {
     if (!open) {
       setPicked(null)
       setFileName('')
+      setFileNameError('')
       setType('')
       setTool('')
       setMethod('')
@@ -101,7 +107,13 @@ export default function UploadSDPModal({ open, onCancel, onNext }) {
 
       // tampilkan file_name tanpa .sdp di input "File Name"
       const rawName = res.file_name || ''
-      setFileName(rawName.replace(/\.sdp$/i, ''))
+      const baseName = rawName.replace(/\.sdp$/i, '')
+      setFileName(baseName)
+
+      // validasi langsung nama file auto-set
+      const { ok, error: validationError } = validateSafeFileName(baseName)
+      setFileNameError(ok ? '' : validationError)
+
       setError('')
 
       // cek apakah file adalah *.txt.sdp
@@ -125,7 +137,8 @@ export default function UploadSDPModal({ open, onCancel, onNext }) {
   }, [picked, fileName, type, tool, method, notes])
 
   const isValid = useMemo(() => {
-    return !!(picked && fileName.trim() && type && tool && method)
+    const { ok } = validateSafeFileName(fileName || '')
+    return !!(picked && ok && type && tool && method)
   }, [picked, fileName, type, tool, method])
 
   function handleRequestClose() {
@@ -134,6 +147,13 @@ export default function UploadSDPModal({ open, onCancel, onNext }) {
   }
 
   function handleNext() {
+    // validasi spesifik nama file dulu
+    const { ok, error: validationError } = validateSafeFileName(fileName)
+    if (!ok) {
+      setFileNameError(validationError)
+      return
+    }
+
     if (!isValid) {
       setShowIncomplete(true)
       return
@@ -237,6 +257,7 @@ export default function UploadSDPModal({ open, onCancel, onNext }) {
                     onClick={() => {
                       setPicked(null)
                       setFileName('')
+                      setFileNameError('')
                       // kalau sebelumnya auto-lock dari .txt.sdp, reset juga Tool & Method
                       if (lockToolMethod) {
                         setTool('')
@@ -266,8 +287,13 @@ export default function UploadSDPModal({ open, onCancel, onNext }) {
           <InputField
             label="File Name"
             value={fileName}
-            onChange={setFileName}
+            onChange={(v) => {
+              setFileName(v)
+              const { ok, error: validationError } = validateSafeFileName(v)
+              setFileNameError(ok ? '' : validationError)
+            }}
             placeholder="Name (excluding .sdp)"
+            error={fileNameError}
           />
 
           <SelectField

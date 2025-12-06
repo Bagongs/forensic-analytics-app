@@ -63,7 +63,17 @@ export const useAuth = create((set, get) => ({
       const res = await window.api.auth.login({ email, password })
 
       if (!res?.ok) {
-        const msg = res?.message || 'Failed to Login'
+        const rawMsg = res?.message || 'Failed to Login'
+        let msg = rawMsg
+
+        // Mapping pesan teknis jadi lebih friendly
+        if (rawMsg.includes('ECONNREFUSED') || rawMsg.includes('connect ECONNREFUSED')) {
+          msg =
+            'Unable to connect to the server. Please make sure the server is running and try again.'
+        } else if (rawMsg.toLowerCase().includes('timeout')) {
+          msg = 'The request timed out. Please check your connection and try again.'
+        }
+
         set({ error: msg, authed: false, user: null })
         return { ok: false, error: msg }
       }
@@ -92,7 +102,22 @@ export const useAuth = create((set, get) => ({
 
       return { ok: true }
     } catch (e) {
-      const msg = e?.message || 'Failed to Login'
+      const rawMsg = e?.message || 'Failed to Login'
+      let msg = rawMsg
+
+      // Di sini juga kita mapping error yang dilempar (exception)
+      if (rawMsg.includes('ECONNREFUSED') || rawMsg.includes('connect ECONNREFUSED')) {
+        msg =
+          'Unable to connect to the server. Please make sure the server is running and try again.'
+      } else if (rawMsg.toLowerCase().includes('timeout') || rawMsg.includes('ETIMEDOUT')) {
+        msg = 'The request timed out. Please check your connection and try again.'
+      } else if (!rawMsg || rawMsg === 'Network Error') {
+        msg = 'Network error. Please check your internet connection and try again.'
+      } else {
+        // fallback generic
+        msg = 'Login failed. Please try again.'
+      }
+
       set({ error: msg, authed: false, user: null })
       return { ok: false, error: msg }
     } finally {
