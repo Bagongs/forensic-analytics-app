@@ -25,7 +25,6 @@ function LicenseCard({ title, code, bg, className = '' }) {
     >
       <div className="flex flex-col justify-center text-left pl-40 pr-8">
         <span className="text-[#EDC702] font-bold text-2xl tracking-tight">{title}</span>
-
         <span className="text-[#F4F6F8] text-2xl font-medium mt-4 tracking-wide">{code}</span>
       </div>
     </div>
@@ -83,22 +82,22 @@ export default function AboutPage() {
       </div>
 
       {/* MAIN SECTION */}
-      <div className="flex-1 w-full flex flex-col items-center justify-start pt-8 pb-10">
+      <div className="flex-1 w-full flex flex-col items-center justify-start pt-32 pb-12">
         {/* LOGO */}
         <img
           src={iconApp}
           alt="App Logo"
-          className="w-[220px] h-[220px] object-contain mb-6 select-none"
+          className="w-[220px] h-[220px] object-contain mb-14 select-none"
           draggable={false}
         />
 
         {/* TITLE */}
-        <h1 className="text-[#EDC702] text-5xl font-bold tracking-wide mb-20 text-center">
+        <h1 className="text-[#EDC702] text-5xl font-bold tracking-wide mb-14 text-center">
           DATA ANALYTICS PLATFORM
         </h1>
 
         {/* ===== ROW ATAS (2 LICENSES) ===== */}
-        <div className="flex items-center justify-center gap-8 mb-8">
+        <div className="flex items-center justify-center gap-10 mb-14">
           {licensesTop.map((lic, idx) => (
             <LicenseCard
               key={idx}
@@ -111,7 +110,7 @@ export default function AboutPage() {
         </div>
 
         {/* ===== ROW BAWAH (3 LICENSES) ===== */}
-        <div className="flex items-center justify-center gap-8">
+        <div className="flex items-center justify-center gap-12 mb-6">
           {licensesBottom.map((lic, idx) => (
             <LicenseCard
               key={idx}
