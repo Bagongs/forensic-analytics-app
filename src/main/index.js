@@ -32,7 +32,7 @@ function createWindow() {
     width: 1366,
     height: 900,
     show: true,
-    fullscreen: true,
+    // fullscreen: true,
     autoHideMenuBar: true,
     backgroundColor: '#0B0F17',
     titleBarStyle: 'hiddenInset',
