@@ -116,3 +116,7 @@ contextBridge.exposeInMainWorld('nativeBridge', {
   openPath: (p) => call('util:openPath', p),
   copyText: (p) => call('util:copyText', p)
 })
+
+contextBridge.exposeInMainWorld('system', {
+  quitApp: () => ipcRenderer.send('quit-app')
+})

@@ -1,5 +1,5 @@
 // src/main/index.js
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 
@@ -76,7 +76,10 @@ app.whenReady().then(() => {
   registerApkIpc()
   registerReportIpc()
   registerUsersIpc()
-
+  ipcMain.on('quit-app', () => {
+    console.log('[IPC] quit-app → closing application')
+    app.quit()
+  })
   createWindow()
 
   app.on('activate', () => {

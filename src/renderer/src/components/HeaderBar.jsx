@@ -5,12 +5,16 @@ import { useAuth } from '@renderer/store/auth'
 import { useNavigate } from 'react-router-dom'
 import { LuEye, LuEyeOff } from 'react-icons/lu'
 import { MdOutlineInfo } from 'react-icons/md'
+import CloseConfirmationModal from './CloseConfirmationModal'
 
 export default function HeaderBar() {
   const nav = useNavigate()
   const { user, logout } = useAuth()
+
   const [open, setOpen] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [showCloseModal, setShowCloseModal] = useState(false) // ⬅️ ADD INI
+
   const btnRef = useRef(null)
   const popRef = useRef(null)
 
@@ -21,6 +25,7 @@ export default function HeaderBar() {
       setOpen(false)
     }
     const onEsc = (e) => e.key === 'Escape' && setOpen(false)
+
     document.addEventListener('mousedown', onDocClick)
     document.addEventListener('keydown', onEsc)
     return () => {
@@ -36,23 +41,20 @@ export default function HeaderBar() {
 
   const safeUser = user || { fullname: 'User', email: '-', role: 'user', tag: '' }
 
-  // Admin = role 'admin' + tag 'Admin' (case-insensitive)
   const isAdmin =
     String(safeUser.role).toLowerCase() === 'admin' &&
     String(safeUser.tag || '').toLowerCase() === 'admin'
 
-  // Password display
   const masked = '••••••••••••••••'
   const hasPassword = !!safeUser.password
   const displayPassword = hasPassword ? (showPassword ? safeUser.password : masked) : masked
 
   return (
     <>
-      {/* ===================== HEADER BAR ===================== */}
+      {/* ========== HEADER BAR (NO STYLE CHANGES) ========== */}
       <div
         className="
           w-full md:h-16 lg:h-[100px] relative overflow-x-hidden
-          /* 27” QHD (2560×1440): header lebih tinggi */
           [@media(min-width:2560px)_and_(max-height:1500px)]:lg:h-32
         "
       >
@@ -62,11 +64,9 @@ export default function HeaderBar() {
           className="absolute top-0 left-0 w-screen h-auto object-cover -z-10"
         />
 
-        {/* right user area */}
         <div
           className="
             flex justify-end items-center relative mt-2 mr-1 2xl:mt-5
-            /* 27”: posisi user naik & margin kanan lebih besar */
             [@media(min-width:2560px)_and_(max-height:1500px)]:mr-3.5
             [@media(min-width:2560px)_and_(max-height:1500px)]:2xl:mt-10
           "
@@ -108,7 +108,6 @@ export default function HeaderBar() {
           className="
             absolute right-4 w-[320px] overflow-hidden text-[#E7E9EE] z-50 mt-2
             top-[72px]
-            /* 27”: dropdown turun sedikit */
             [@media(min-width:2560px)_and_(max-height:1500px)]:top-[110px]
           "
           style={{
@@ -118,20 +117,13 @@ export default function HeaderBar() {
             borderRadius: '8px'
           }}
         >
-          {/* ===== TOP: user info ===== */}
+          {/* USER INFO */}
           <div className="px-4 pt-4 pb-3">
-            <div
-              className="
-                font-semibold text-sm
-                /* 27”: pakai Aldrich */
-                [@media(min-width:2560px)_and_(max-height:1500px)]:font-[Aldrich]
-              "
-            >
+            <div className="font-semibold text-sm [@media(min-width:2560px)_and_(max-height:1500px)]:font-[Aldrich]">
               {safeUser.fullname || safeUser.email}
             </div>
             <div className="text-sm opacity-80">{safeUser.email}</div>
 
-            {/* Password row only for admin */}
             {isAdmin && (
               <button
                 type="button"
@@ -139,18 +131,15 @@ export default function HeaderBar() {
                 disabled={!hasPassword}
                 className="mt-3 flex items-center gap-2 text-xs opacity-80 hover:opacity-100 disabled:cursor-not-allowed"
               >
-                {showPassword && hasPassword ? (
-                  <LuEye className="w-4 h-4" />
-                ) : (
-                  <LuEyeOff className="w-4 h-4" />
-                )}
+                {showPassword ? <LuEye className="w-4 h-4" /> : <LuEyeOff className="w-4 h-4" />}
                 <span className="tracking-[0.25em] select-none">{displayPassword}</span>
               </button>
             )}
           </div>
+
           <div className="h-px" style={{ background: '#C3CFE0' }} />
 
-          {/* ===== MENU: admin only ===== */}
+          {/* ADMIN MENU */}
           {isAdmin && (
             <>
               <button
@@ -168,11 +157,12 @@ export default function HeaderBar() {
                 </svg>
                 <span className="text-sm">User management</span>
               </button>
+
               <div className="h-px" style={{ background: '#C3CFE0' }} />
             </>
           )}
 
-          {/* ===== ABOUT ===== */}
+          {/* ABOUT */}
           <button
             onClick={() => {
               setOpen(false)
@@ -186,9 +176,12 @@ export default function HeaderBar() {
 
           <div className="h-px" style={{ background: '#C3CFE0' }} />
 
-          {/* ===== LOGOUT ===== */}
+          {/* LOGOUT → Show Modal */}
           <button
-            onClick={doLogout}
+            onClick={() => {
+              setShowCloseModal(true)
+              setOpen(false)
+            }}
             className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-[#1C2633]"
           >
             <svg width="18" height="18" viewBox="0 0 24 24">
@@ -196,14 +189,26 @@ export default function HeaderBar() {
                 d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
                 stroke="currentColor"
                 strokeWidth="2"
-                fill="none"
               />
-              <path d="M16 17l5-5-5-5M21 12H9" stroke="currentColor" strokeWidth="2" fill="none" />
+              <path d="M16 17l5-5-5-5M21 12H9" stroke="currentColor" strokeWidth="2" />
             </svg>
             <span className="text-sm">Log out</span>
           </button>
         </div>
       )}
+
+      {/* ========== CLOSE MODAL ========== */}
+      <CloseConfirmationModal
+        open={showCloseModal}
+        onCancel={() => setShowCloseModal(false)}
+        onConfirm={async () => {
+          try {
+            await logout()
+          } finally {
+            window.system.quitApp()
+          }
+        }}
+      />
     </>
   )
 }
