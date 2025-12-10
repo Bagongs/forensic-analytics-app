@@ -34,8 +34,8 @@ function createWindow() {
   const win = new BrowserWindow({
     width: 1366,
     height: 900,
-    show: true,
-    fullscreen: true,
+    show: false,
+    // fullscreen: true,
     autoHideMenuBar: true,
     backgroundColor: '#0B0F17',
     titleBarStyle: 'hiddenInset',
@@ -46,6 +46,12 @@ function createWindow() {
       sandbox: true,
       devTools: true
     }
+  })
+
+  // ⭐ Pastikan ketika siap, window benar-benar dimunculkan & difokuskan
+  win.once('ready-to-show', () => {
+    win.show()
+    win.focus()
   })
 
   if (is.dev) {
@@ -60,11 +66,14 @@ function createWindow() {
     process.env.ELECTRON_RENDERER_URL || `file://${join(__dirname, '../renderer/index.html')}#/?`
 
   win.loadURL(pageUrl)
+
+  return win
 }
 
 /* ====== App lifecycle ====== */
 app.whenReady().then(() => {
-  electronApp.setAppUserModelId('forensic-analytics')
+  // ⭐ Bagus kalau AppUserModelID dibuat mirip reverse-DNS, tapi ini opsional
+  electronApp.setAppUserModelId('com.sii.forensic-analytics')
 
   // Optimizer: keyboard shortcuts dll di dev
   app.on('browser-window-created', (_, window) => {
@@ -79,10 +88,12 @@ app.whenReady().then(() => {
   registerApkIpc()
   registerReportIpc()
   registerUsersIpc()
+
   ipcMain.on('quit-app', () => {
     console.log('[IPC] quit-app → closing application')
     app.quit()
   })
+
   createWindow()
 
   ipcMain.handle('license:getInfo', async () => {
