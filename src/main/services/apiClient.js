@@ -3,7 +3,7 @@
 import axios from 'axios'
 import { BrowserWindow } from 'electron'
 
-const BASE_URL = process.env.BACKEND_BASE_URL || 'http://172.15.2.105:8000'
+const BASE_URL = import.meta.env?.VITE_BACKEND_BASE_URL || 'http://172.15.2.105:8000'
 
 // ===== State token (hanya di main)
 let accessToken = null

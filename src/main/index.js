@@ -11,6 +11,9 @@ import registerDeviceIpc from './ipc/device.ipc'
 import registerApkIpc from './ipc/apk.ipc'
 import registerReportIpc from './ipc/report.ipc'
 import registerUsersIpc from './ipc/users.ipc'
+import axios from 'axios'
+
+const BACKEND_BASE = import.meta.env?.VITE_BACKEND_BASE_URL || 'http://172.15.2.105:8000'
 
 /* ====== Unhandled errors safeguard ====== */
 process.on('uncaughtException', (err) => {
@@ -81,6 +84,20 @@ app.whenReady().then(() => {
     app.quit()
   })
   createWindow()
+
+  ipcMain.handle('license:getInfo', async () => {
+    try {
+      const res = await axios.get(`${BACKEND_BASE}/license`)
+      return res.data
+    } catch (error) {
+      console.error('[IPC license:getInfo] Error:', error)
+      return {
+        status: 500,
+        message: 'Failed to get license',
+        error: error.message
+      }
+    }
+  })
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

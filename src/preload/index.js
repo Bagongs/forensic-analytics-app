@@ -120,3 +120,7 @@ contextBridge.exposeInMainWorld('nativeBridge', {
 contextBridge.exposeInMainWorld('system', {
   quitApp: () => ipcRenderer.send('quit-app')
 })
+
+contextBridge.exposeInMainWorld('license', {
+  getInfo: () => ipcRenderer.invoke('license:getInfo')
+})

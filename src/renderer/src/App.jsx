@@ -20,6 +20,7 @@ import RequireAnalysis from '@renderer/components/guards/RequireAnalysis'
 
 import useAuthEvents from './hooks/useAuthEvents'
 import { useAuth } from './store/auth'
+import LicenseGate from './pages/LicensePage.jsx'
 
 // Pakai flag dari Vite/Electron Vite:
 // true saat `npm run dev`, false saat build (packaged)
@@ -30,114 +31,116 @@ function RouterRoot() {
   useAuthEvents({ toast })
 
   return (
-    <Routes>
-      {/* public */}
-      <Route path="/login" element={<LoginPage />} />
+    <LicenseGate>
+      <Routes>
+        {/* public */}
+        <Route path="/login" element={<LoginPage />} />
 
-      {/* redirect root → analytics */}
-      <Route path="/" element={<Navigate to="/analytics" replace />} />
+        {/* redirect root → analytics */}
+        <Route path="/" element={<Navigate to="/analytics" replace />} />
 
-      {/* guarded */}
-      <Route
-        path="/analytics"
-        element={
-          <RequireAuth>
-            <AnalyticsPage />
-          </RequireAuth>
-        }
-      />
-      <Route
-        path="/analytics/devices"
-        element={
-          <RequireAuth>
-            <DeviceSelectionPage />
-          </RequireAuth>
-        }
-      />
+        {/* guarded */}
+        <Route
+          path="/analytics"
+          element={
+            <RequireAuth>
+              <AnalyticsPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/analytics/devices"
+          element={
+            <RequireAuth>
+              <DeviceSelectionPage />
+            </RequireAuth>
+          }
+        />
 
-      <Route
-        path="/user-management"
-        element={
-          <RequireAuth>
-            <UserManagement />
-          </RequireAuth>
-        }
-      />
+        <Route
+          path="/user-management"
+          element={
+            <RequireAuth>
+              <UserManagement />
+            </RequireAuth>
+          }
+        />
 
-      <Route
-        path="/about"
-        element={
-          <RequireAuth>
-            <AboutPage />
-          </RequireAuth>
-        }
-      />
+        <Route
+          path="/about"
+          element={
+            <RequireAuth>
+              <AboutPage />
+            </RequireAuth>
+          }
+        />
 
-      {/* detail pages */}
-      <Route
-        path="/detail/contact-correlation"
-        element={
-          <RequireAuth>
-            <RequireAnalysis>
-              <ContactCorrelationPage />
-            </RequireAnalysis>
-          </RequireAuth>
-        }
-      />
-      <Route
-        path="/detail/deep-communication"
-        element={
-          <RequireAuth>
-            <RequireAnalysis>
-              <DeepCommunicationPage />
-            </RequireAnalysis>
-          </RequireAuth>
-        }
-      />
-      <Route
-        path="/detail/hashfile-analytics"
-        element={
-          <RequireAuth>
-            <RequireAnalysis>
-              <HashfileAnalyticsPage />
-            </RequireAnalysis>
-          </RequireAuth>
-        }
-      />
-      <Route
-        path="/detail/apk-analytics"
-        element={
-          <RequireAuth>
-            <RequireAnalysis>
-              <ApkAnalysisPage />
-            </RequireAnalysis>
-          </RequireAuth>
-        }
-      />
-      <Route
-        path="/detail/apk-analytics/result"
-        element={
-          <RequireAuth>
-            <RequireAnalysis>
-              <ApkResultPage />
-            </RequireAnalysis>
-          </RequireAuth>
-        }
-      />
-      <Route
-        path="/detail/social-media-correlation"
-        element={
-          <RequireAuth>
-            <RequireAnalysis>
-              <SocialMediaCorrelationPage />
-            </RequireAnalysis>
-          </RequireAuth>
-        }
-      />
+        {/* detail pages */}
+        <Route
+          path="/detail/contact-correlation"
+          element={
+            <RequireAuth>
+              <RequireAnalysis>
+                <ContactCorrelationPage />
+              </RequireAnalysis>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/detail/deep-communication"
+          element={
+            <RequireAuth>
+              <RequireAnalysis>
+                <DeepCommunicationPage />
+              </RequireAnalysis>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/detail/hashfile-analytics"
+          element={
+            <RequireAuth>
+              <RequireAnalysis>
+                <HashfileAnalyticsPage />
+              </RequireAnalysis>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/detail/apk-analytics"
+          element={
+            <RequireAuth>
+              <RequireAnalysis>
+                <ApkAnalysisPage />
+              </RequireAnalysis>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/detail/apk-analytics/result"
+          element={
+            <RequireAuth>
+              <RequireAnalysis>
+                <ApkResultPage />
+              </RequireAnalysis>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/detail/social-media-correlation"
+          element={
+            <RequireAuth>
+              <RequireAnalysis>
+                <SocialMediaCorrelationPage />
+              </RequireAnalysis>
+            </RequireAuth>
+          }
+        />
 
-      {/* fallback agar tidak "No routes matched" */}
-      <Route path="*" element={<Navigate to="/analytics" replace />} />
-    </Routes>
+        {/* fallback agar tidak "No routes matched" */}
+        <Route path="*" element={<Navigate to="/analytics" replace />} />
+      </Routes>
+    </LicenseGate>
   )
 }
 
