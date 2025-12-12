@@ -31,12 +31,13 @@ function RouterRoot() {
   useAuthEvents({ toast })
 
   return (
-    <LicenseGate>
-      <Routes>
-        {/* public */}
-        <Route path="/login" element={<LoginPage />} />
+    // <LicenseGate>
+    <Routes>
+      {/* public */}
+      <Route path="/login" element={<LoginPage />} />
 
-        {/* redirect root → analytics */}
+      {/* redirect root → analytics */}
+      <Route element={<LicenseGate />}>
         <Route path="/" element={<Navigate to="/analytics" replace />} />
 
         {/* guarded */}
@@ -136,11 +137,12 @@ function RouterRoot() {
             </RequireAuth>
           }
         />
+      </Route>
 
-        {/* fallback agar tidak "No routes matched" */}
-        <Route path="*" element={<Navigate to="/analytics" replace />} />
-      </Routes>
-    </LicenseGate>
+      {/* fallback agar tidak "No routes matched" */}
+      <Route path="*" element={<Navigate to="/analytics" replace />} />
+    </Routes>
+    // </LicenseGate>
   )
 }
 

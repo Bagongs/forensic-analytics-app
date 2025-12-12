@@ -59,6 +59,17 @@ export default function LoginPage() {
     nav(to, { replace: true })
   }
 
+  const FRONTEND_EXPIRED_DATE = '2028-01-01'
+  const frontendExpired = new Date() >= new Date(FRONTEND_EXPIRED_DATE)
+
+  if (frontendExpired) {
+    return (
+      <div className="bg-black h-screen flex items-center justify-center">
+        <h1 className="text-white text-3xl font-bold uppercase">License Expired</h1>
+      </div>
+    )
+  }
+
   return (
     <div className="fixed inset-0 w-full h-full flex items-center justify-center overflow-hidden px-4">
       {/* CARD UTAMA */}
@@ -169,7 +180,7 @@ export default function LoginPage() {
 
               {/* ERROR GLOBAL (login gagal dari backend / store) */}
               {(error || storeError) && (
-                <p className="text-sm" style={{ color: '#ff6b6b' }}>
+                <p className="text-sm text-center" style={{ color: '#ff6b6b' }}>
                   {error || storeError}
                 </p>
               )}

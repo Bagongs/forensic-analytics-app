@@ -175,6 +175,20 @@ export async function refreshAccessTokenOnce() {
 
 // ===== Response error: auto-refresh + retry + CLEAN ERROR MESSAGE
 api.interceptors.response.use(undefined, async (err) => {
+
+  // ⭐ ADDED — CLEAN NETWORK ERROR HANDLER
+  if (!err.response) {
+
+    const clean = new Error(
+      'Unable to connect to the server. Please check your network or try again.'
+    )
+    clean.code = 'NETWORK_ERROR'
+    clean.isNetworkError = true
+
+    return Promise.reject(clean)
+  }
+  // ⭐ END ADDED BLOCK
+
   const status = err?.response?.status
   const original = err?.config || {}
   const url = original?.url
@@ -209,12 +223,10 @@ api.interceptors.response.use(undefined, async (err) => {
   const d = err?.response?.data
   if (d?.message) console.error('[API Error]', d.message)
 
-  // ⛔ tetap raw untuk 400/404 (buat guard/redirect logic kamu)
   if (d && typeof d === 'object' && (d.status === 400 || d.status === 404)) {
     return Promise.reject(d)
   }
 
-  // ✅ semua selain 400/404 (termasuk 401 login) jadi Error bersih
   if (d && typeof d === 'object' && d.message) {
     const cleanErr = new Error(d.message)
     cleanErr.status = d.status ?? status
