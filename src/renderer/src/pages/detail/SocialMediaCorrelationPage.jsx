@@ -73,6 +73,10 @@ function cleanName(raw) {
   return out
 }
 
+function isUnknownName(name) {
+  return cleanName(name).toLowerCase() === 'unknown'
+}
+
 /* ============ komponen kecil (UI tetap) ============ */
 function SquareCheckbox({ active }) {
   return (
@@ -101,18 +105,20 @@ function SquareCheckbox({ active }) {
   )
 }
 
-function ContactRow({ name, highlighted, onClick }) {
+function ContactRow({ name, highlighted, onClick, disabled = false }) {
   return (
     <button
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
       className="w-full flex items-center gap-3 px-3 py-2 text-left transition-all"
       style={{
         borderBottom: `1px solid ${COLORS.border}`,
         background: highlighted ? COLORS.diamondActiveBg : 'transparent',
         border: highlighted ? `1px solid ${COLORS.gold}` : 'none',
-        color: COLORS.text
+        color: COLORS.text,
+        opacity: disabled ? 0.55 : 1,
+        cursor: disabled ? 'not-allowed' : 'pointer'
       }}
-      title={name}
+      title={disabled ? `${name} (disabled)` : name}
     >
       <SquareCheckbox active={highlighted} />
       <span className="text-[14px]">{name}</span>
@@ -153,7 +159,6 @@ export default function SocialMediaCorrelationPage() {
 
   /**
    * ✅ selection berdasarkan ROW/Bucket (cluster)
-   * kalau klik salah satu nama, kita pilih barisnya:
    * { rowIdx, label } | null
    */
   const [selectedRow, setSelectedRow] = useState(null)
@@ -233,21 +238,21 @@ export default function SocialMediaCorrelationPage() {
 
           const deviceLists = Array.from({ length: deviceCount }, () => [])
 
-          let rowIdxGlobal = 0 // ✅ row index global untuk platform ini
+          let rowIdxGlobal = 0
           const buckets = toArray(pfVal?.buckets)
 
           for (const b of buckets) {
             const label = toStringSafe(b?.label || '').trim() || '0 koneksi'
-            const rows = toArray(b?.devices) // rows = [ [dev1,dev2,dev3], ... ]
+            const rows = toArray(b?.devices)
 
             for (const row of rows) {
               if (!Array.isArray(row)) continue
 
               for (let j = 0; j < deviceCount; j++) {
                 deviceLists[j].push({
-                  name: cleanName(row[j]), // ✅ nama dari JSON buckets.devices
-                  label, // ✅ label dari bucket
-                  rowIdx: rowIdxGlobal // ✅ kunci untuk highlight 1 cluster
+                  name: cleanName(row[j]),
+                  label,
+                  rowIdx: rowIdxGlobal
                 })
               }
 
@@ -267,8 +272,6 @@ export default function SocialMediaCorrelationPage() {
 
         setItemsByPlatformByDevice(perPlatform)
         setSummary(toStringSafe(payload?.summary || ''))
-
-        // reset selection
         setSelectedRow(null)
       } catch (e) {
         if (!mounted) return
@@ -308,7 +311,6 @@ export default function SocialMediaCorrelationPage() {
     const q = query.trim().toLowerCase()
     if (!q) return cols
 
-    // filter hanya berdasarkan name, tapi item tetap bawa rowIdx/label
     return cols.map((list) => list.filter((it) => (it.name || '').toLowerCase().includes(q)))
   }, [itemsByPlatformByDevice, platform, query, contactColumnsCount])
 
@@ -466,7 +468,7 @@ export default function SocialMediaCorrelationPage() {
 
           {/* Isi tabel (tetap) */}
           <div className="px-6 pb-6 pt-4 flex items-stretch gap-10">
-            {/* Koneksi (sesuai label bucket row terpilih) */}
+            {/* Koneksi */}
             <div className="shrink-0 flex items-center" style={{ width: 200 }}>
               <div className="font-[Aldrich] text-[36px]" style={{ color: COLORS.gold }}>
                 {selectedRow ? koneksiLabel : 'Pilih nama'}
@@ -536,20 +538,26 @@ export default function SocialMediaCorrelationPage() {
                           </div>
                         ) : (
                           items.map((it, idx) => {
-                            // ✅ highlight = semua item yg rowIdx sama dengan selectedRow.rowIdx
-                            const highlighted = !!selectedRow && it.rowIdx === selectedRow.rowIdx
+                            const unknown = isUnknownName(it.name)
+
+                            // ✅ highlight row yg sama, tapi Unknown tidak ikut highlight
+                            const highlighted =
+                              !!selectedRow && it.rowIdx === selectedRow.rowIdx && !unknown
+
                             return (
                               <ContactRow
                                 key={`${colIdx}:${idx}:${it.name}:${it.rowIdx}`}
                                 name={it.name}
                                 highlighted={highlighted}
-                                onClick={() =>
+                                disabled={unknown} // Unknown tetap tampil tapi tidak bisa dipilih
+                                onClick={() => {
+                                  if (unknown) return
                                   setSelectedRow((prev) =>
                                     prev?.rowIdx === it.rowIdx
                                       ? null
                                       : { rowIdx: it.rowIdx, label: it.label }
                                   )
-                                }
+                                }}
                               />
                             )
                           })
