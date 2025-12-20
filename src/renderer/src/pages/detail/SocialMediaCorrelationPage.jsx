@@ -73,15 +73,6 @@ function cleanName(raw) {
   return out
 }
 
-// ambil angka dari "3 koneksi" → 3 (kalau tidak ada angka → -1)
-function parseKoneksiNumber(label) {
-  const s = toStringSafe(label)
-  const m = s.match(/(\d+)/)
-  if (!m) return -1
-  const n = Number(m[1])
-  return Number.isFinite(n) ? n : -1
-}
-
 /* ============ komponen kecil (UI tetap) ============ */
 function SquareCheckbox({ active }) {
   return (
@@ -159,21 +150,24 @@ export default function SocialMediaCorrelationPage() {
   // ====== UI state ======
   const [platform, setPlatform] = useState('Instagram')
   const [query, setQuery] = useState('')
-  const [selectedName, setSelectedName] = useState(null)
+
+  /**
+   * ✅ selection berdasarkan ROW/Bucket (cluster)
+   * kalau klik salah satu nama, kita pilih barisnya:
+   * { rowIdx, label } | null
+   */
+  const [selectedRow, setSelectedRow] = useState(null)
 
   // ====== Data API ======
   const [devices, setDevices] = useState([])
-  const [totalDevices, setTotalDevices] = useState(0) // fallback jumlah kolom saat loading
+  const [totalDevices, setTotalDevices] = useState(0)
 
   /**
-   * ✅ kita simpan bukan cuma string nama,
-   * tapi object: { name, label } agar koneksi bisa dari bucket.label
-   *
-   * bentuk:
+   * ✅ simpan item per device:
    * {
    *   Instagram: [
-   *     [ {name,label}, {name,label}, ... ], // device 1
-   *     [ {name,label}, {name,label}, ... ], // device 2
+   *     [ {name,label,rowIdx}, ... ], // device 1
+   *     [ {name,label,rowIdx}, ... ], // device 2
    *     ...
    *   ]
    * }
@@ -227,7 +221,6 @@ export default function SocialMediaCorrelationPage() {
         }))
         setDevices(devs)
 
-        // ===== PARSE correlations (PER DEVICE, duplikat tetap muncul) =====
         const corrObj = payload?.correlations || {}
         const deviceCount =
           devs.length || Number(payload?.total_devices || payload?.devices?.length || 0) || 1
@@ -240,7 +233,9 @@ export default function SocialMediaCorrelationPage() {
 
           const deviceLists = Array.from({ length: deviceCount }, () => [])
 
+          let rowIdxGlobal = 0 // ✅ row index global untuk platform ini
           const buckets = toArray(pfVal?.buckets)
+
           for (const b of buckets) {
             const label = toStringSafe(b?.label || '').trim() || '0 koneksi'
             const rows = toArray(b?.devices) // rows = [ [dev1,dev2,dev3], ... ]
@@ -249,10 +244,14 @@ export default function SocialMediaCorrelationPage() {
               if (!Array.isArray(row)) continue
 
               for (let j = 0; j < deviceCount; j++) {
-                const name = cleanName(row[j])
-                // ✅ simpan name + label (label dari bucket)
-                deviceLists[j].push({ name, label })
+                deviceLists[j].push({
+                  name: cleanName(row[j]), // ✅ nama dari JSON buckets.devices
+                  label, // ✅ label dari bucket
+                  rowIdx: rowIdxGlobal // ✅ kunci untuk highlight 1 cluster
+                })
               }
+
+              rowIdxGlobal++
             }
           }
 
@@ -269,8 +268,8 @@ export default function SocialMediaCorrelationPage() {
         setItemsByPlatformByDevice(perPlatform)
         setSummary(toStringSafe(payload?.summary || ''))
 
-        // optional: reset selection saat load platform baru
-        setSelectedName(null)
+        // reset selection
+        setSelectedRow(null)
       } catch (e) {
         if (!mounted) return
         setError(extractHttpMessage(e, 'Failed to load Social Media Correlation'))
@@ -297,7 +296,7 @@ export default function SocialMediaCorrelationPage() {
     return Math.max(1, n)
   }, [itemsByPlatformByDevice, platform, devices.length, totalDevices])
 
-  // ===== columns per device (tanpa dedupe) =====
+  // ===== columns per device + search filter =====
   const columns = useMemo(() => {
     const deviceLists = itemsByPlatformByDevice[platform] || []
 
@@ -309,36 +308,15 @@ export default function SocialMediaCorrelationPage() {
     const q = query.trim().toLowerCase()
     if (!q) return cols
 
-    // filter per kolom (berdasarkan name)
+    // filter hanya berdasarkan name, tapi item tetap bawa rowIdx/label
     return cols.map((list) => list.filter((it) => (it.name || '').toLowerCase().includes(q)))
   }, [itemsByPlatformByDevice, platform, query, contactColumnsCount])
 
-  /**
-   * ✅ koneksi di kiri: ambil dari bucket.label
-   * Behavior selection tetap seperti kode kamu: selectedName
-   * Strategy: ambil label dengan angka TERBESAR dari semua kemunculan selectedName
-   */
+  // ✅ koneksi dari label bucket pada row yang dipilih
   const koneksiLabel = useMemo(() => {
-    if (!selectedName) return ''
-
-    let bestLabel = ''
-    let bestNum = -1
-
-    for (const col of columns) {
-      for (const it of col) {
-        if (it?.name === selectedName) {
-          const n = parseKoneksiNumber(it?.label)
-          if (n > bestNum) {
-            bestNum = n
-            bestLabel = toStringSafe(it?.label || '')
-          }
-        }
-      }
-    }
-
-    // fallback kalau label kosong
-    return bestLabel || '0 koneksi'
-  }, [columns, selectedName])
+    if (!selectedRow) return ''
+    return toStringSafe(selectedRow.label || '')
+  }, [selectedRow])
 
   const totalItems = useMemo(() => columns.reduce((s, arr) => s + arr.length, 0), [columns])
   const nothingToExport = !error && !loading && totalItems === 0
@@ -461,7 +439,7 @@ export default function SocialMediaCorrelationPage() {
                   value={platform}
                   onChange={(v) => {
                     setPlatform(v)
-                    setSelectedName(null)
+                    setSelectedRow(null)
                   }}
                   options={PLATFORM_OPTIONS}
                   placeholder="Select platform"
@@ -488,10 +466,10 @@ export default function SocialMediaCorrelationPage() {
 
           {/* Isi tabel (tetap) */}
           <div className="px-6 pb-6 pt-4 flex items-stretch gap-10">
-            {/* Koneksi (✅ dari bucket.label, selection tetap by name) */}
+            {/* Koneksi (sesuai label bucket row terpilih) */}
             <div className="shrink-0 flex items-center" style={{ width: 200 }}>
               <div className="font-[Aldrich] text-[36px]" style={{ color: COLORS.gold }}>
-                {selectedName ? koneksiLabel : 'Pilih nama'}
+                {selectedRow ? koneksiLabel : 'Pilih nama'}
               </div>
             </div>
 
@@ -558,14 +536,19 @@ export default function SocialMediaCorrelationPage() {
                           </div>
                         ) : (
                           items.map((it, idx) => {
-                            const highlighted = !!selectedName && it.name === selectedName
+                            // ✅ highlight = semua item yg rowIdx sama dengan selectedRow.rowIdx
+                            const highlighted = !!selectedRow && it.rowIdx === selectedRow.rowIdx
                             return (
                               <ContactRow
-                                key={`${colIdx}:${idx}:${it.name}`}
-                                name={it.name} // ✅ nama dari buckets.devices
+                                key={`${colIdx}:${idx}:${it.name}:${it.rowIdx}`}
+                                name={it.name}
                                 highlighted={highlighted}
                                 onClick={() =>
-                                  setSelectedName((prev) => (prev === it.name ? null : it.name))
+                                  setSelectedRow((prev) =>
+                                    prev?.rowIdx === it.rowIdx
+                                      ? null
+                                      : { rowIdx: it.rowIdx, label: it.label }
+                                  )
                                 }
                               />
                             )
