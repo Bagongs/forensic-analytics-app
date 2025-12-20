@@ -73,6 +73,15 @@ function cleanName(raw) {
   return out
 }
 
+// ambil angka dari "3 koneksi" → 3 (kalau tidak ada angka → -1)
+function parseKoneksiNumber(label) {
+  const s = toStringSafe(label)
+  const m = s.match(/(\d+)/)
+  if (!m) return -1
+  const n = Number(m[1])
+  return Number.isFinite(n) ? n : -1
+}
+
 /* ============ komponen kecil (UI tetap) ============ */
 function SquareCheckbox({ active }) {
   return (
@@ -157,17 +166,19 @@ export default function SocialMediaCorrelationPage() {
   const [totalDevices, setTotalDevices] = useState(0) // fallback jumlah kolom saat loading
 
   /**
+   * ✅ kita simpan bukan cuma string nama,
+   * tapi object: { name, label } agar koneksi bisa dari bucket.label
+   *
    * bentuk:
    * {
-   *   Telegram: [
-   *     ["a","b","Unknown", ...], // kontak device 1 (per row)
-   *     ["a","b","Unknown", ...], // kontak device 2 (per row)
+   *   Instagram: [
+   *     [ {name,label}, {name,label}, ... ], // device 1
+   *     [ {name,label}, {name,label}, ... ], // device 2
    *     ...
-   *   ],
-   *   Instagram: [...],
+   *   ]
    * }
    */
-  const [namesByPlatformByDevice, setNamesByPlatformByDevice] = useState({})
+  const [itemsByPlatformByDevice, setItemsByPlatformByDevice] = useState({})
 
   // summary
   const [summary, setSummary] = useState('')
@@ -227,20 +238,20 @@ export default function SocialMediaCorrelationPage() {
           const pfKey = normalizePlatformKey(pfRaw)
           if (!pfKey) continue
 
-          // array list per device (bukan Set)
           const deviceLists = Array.from({ length: deviceCount }, () => [])
 
           const buckets = toArray(pfVal?.buckets)
           for (const b of buckets) {
+            const label = toStringSafe(b?.label || '').trim() || '0 koneksi'
             const rows = toArray(b?.devices) // rows = [ [dev1,dev2,dev3], ... ]
 
             for (const row of rows) {
               if (!Array.isArray(row)) continue
 
               for (let j = 0; j < deviceCount; j++) {
-                const cleaned = cleanName(row[j])
-                // push selalu, biarkan Unknown muncul sebanyak row yg kosong
-                deviceLists[j].push(cleaned)
+                const name = cleanName(row[j])
+                // ✅ simpan name + label (label dari bucket)
+                deviceLists[j].push({ name, label })
               }
             }
           }
@@ -255,8 +266,11 @@ export default function SocialMediaCorrelationPage() {
           }
         }
 
-        setNamesByPlatformByDevice(perPlatform)
+        setItemsByPlatformByDevice(perPlatform)
         setSummary(toStringSafe(payload?.summary || ''))
+
+        // optional: reset selection saat load platform baru
+        setSelectedName(null)
       } catch (e) {
         if (!mounted) return
         setError(extractHttpMessage(e, 'Failed to load Social Media Correlation'))
@@ -276,18 +290,17 @@ export default function SocialMediaCorrelationPage() {
 
   // ===== jumlah kolom contact = jumlah device =====
   const contactColumnsCount = useMemo(() => {
-    const lists = namesByPlatformByDevice[platform]
+    const lists = itemsByPlatformByDevice[platform]
     if (lists && Array.isArray(lists) && lists.length > 0) return lists.length
 
     const n = devices.length || totalDevices || 1
     return Math.max(1, n)
-  }, [namesByPlatformByDevice, platform, devices.length, totalDevices])
+  }, [itemsByPlatformByDevice, platform, devices.length, totalDevices])
 
-  // ===== columns per device (tanpa dedupe; Unknown bisa banyak) =====
+  // ===== columns per device (tanpa dedupe) =====
   const columns = useMemo(() => {
-    const deviceLists = namesByPlatformByDevice[platform] || []
+    const deviceLists = itemsByPlatformByDevice[platform] || []
 
-    // kalau belum ada data platform → tetap buat array kosong
     let cols =
       deviceLists.length > 0
         ? deviceLists.map((list) => [...list])
@@ -296,13 +309,35 @@ export default function SocialMediaCorrelationPage() {
     const q = query.trim().toLowerCase()
     if (!q) return cols
 
-    // filter per kolom
-    return cols.map((list) => list.filter((n) => n.toLowerCase().includes(q)))
-  }, [namesByPlatformByDevice, platform, query, contactColumnsCount])
+    // filter per kolom (berdasarkan name)
+    return cols.map((list) => list.filter((it) => (it.name || '').toLowerCase().includes(q)))
+  }, [itemsByPlatformByDevice, platform, query, contactColumnsCount])
 
-  const koneksi = useMemo(() => {
-    if (!selectedName) return 0
-    return columns.reduce((sum, list) => sum + (list.includes(selectedName) ? 1 : 0), 0)
+  /**
+   * ✅ koneksi di kiri: ambil dari bucket.label
+   * Behavior selection tetap seperti kode kamu: selectedName
+   * Strategy: ambil label dengan angka TERBESAR dari semua kemunculan selectedName
+   */
+  const koneksiLabel = useMemo(() => {
+    if (!selectedName) return ''
+
+    let bestLabel = ''
+    let bestNum = -1
+
+    for (const col of columns) {
+      for (const it of col) {
+        if (it?.name === selectedName) {
+          const n = parseKoneksiNumber(it?.label)
+          if (n > bestNum) {
+            bestNum = n
+            bestLabel = toStringSafe(it?.label || '')
+          }
+        }
+      }
+    }
+
+    // fallback kalau label kosong
+    return bestLabel || '0 koneksi'
   }, [columns, selectedName])
 
   const totalItems = useMemo(() => columns.reduce((s, arr) => s + arr.length, 0), [columns])
@@ -348,11 +383,7 @@ export default function SocialMediaCorrelationPage() {
             className="flex items-center justify-center w-[46px] h-[46px] hover:opacity-80 transition"
             aria-label="Back"
           >
-            <IoIosArrowRoundBack
-              color="#EDC702"
-              size={46} // ukuran icon
-              style={{ marginLeft: '-4px' }}
-            />
+            <IoIosArrowRoundBack color="#EDC702" size={46} style={{ marginLeft: '-4px' }} />
           </button>
           <h1 className="font-[Aldrich] text-[22px] tracking-wide text-white">
             SOCIAL MEDIA CORRELATION{analyticName ? ` — ${analyticName}` : ''}
@@ -457,10 +488,10 @@ export default function SocialMediaCorrelationPage() {
 
           {/* Isi tabel (tetap) */}
           <div className="px-6 pb-6 pt-4 flex items-stretch gap-10">
-            {/* Koneksi (tetap) */}
+            {/* Koneksi (✅ dari bucket.label, selection tetap by name) */}
             <div className="shrink-0 flex items-center" style={{ width: 200 }}>
               <div className="font-[Aldrich] text-[36px]" style={{ color: COLORS.gold }}>
-                {selectedName ? `${koneksi} Koneksi` : 'Pilih nama'}
+                {selectedName ? koneksiLabel : 'Pilih nama'}
               </div>
             </div>
 
@@ -502,7 +533,7 @@ export default function SocialMediaCorrelationPage() {
                 {/* Normal/Empty per kolom */}
                 {!loading &&
                   !error &&
-                  columns.map((names, colIdx) => (
+                  columns.map((items, colIdx) => (
                     <div key={colIdx} className="shrink-0 p-3" style={{ width: 260 }}>
                       <div className="text-center mb-2">
                         <div className="font-[Aldrich]" style={{ color: COLORS.text }}>
@@ -521,20 +552,20 @@ export default function SocialMediaCorrelationPage() {
                           overflowY: 'auto'
                         }}
                       >
-                        {names.length === 0 ? (
+                        {items.length === 0 ? (
                           <div className="px-4 py-8 text-center opacity-60">
                             – No data for “{platform}” –
                           </div>
                         ) : (
-                          names.map((name, idx) => {
-                            const highlighted = !!selectedName && name === selectedName
+                          items.map((it, idx) => {
+                            const highlighted = !!selectedName && it.name === selectedName
                             return (
                               <ContactRow
-                                key={`${colIdx}:${idx}:${name}`}
-                                name={name}
+                                key={`${colIdx}:${idx}:${it.name}`}
+                                name={it.name} // ✅ nama dari buckets.devices
                                 highlighted={highlighted}
                                 onClick={() =>
-                                  setSelectedName((prev) => (prev === name ? null : name))
+                                  setSelectedName((prev) => (prev === it.name ? null : it.name))
                                 }
                               />
                             )

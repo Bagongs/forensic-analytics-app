@@ -13,7 +13,7 @@ import registerReportIpc from './ipc/report.ipc'
 import registerUsersIpc from './ipc/users.ipc'
 import axios from 'axios'
 
-const BACKEND_BASE = import.meta.env?.VITE_BACKEND_BASE_URL || 'http://172.15.2.105:8000'
+const BACKEND_BASE = import.meta.env?.VITE_BACKEND_BASE_URL || 'http://192.168.8.116:8000'
 
 /* ====== Unhandled errors safeguard ====== */
 process.on('uncaughtException', (err) => {
